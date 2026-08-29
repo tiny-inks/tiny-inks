@@ -9,6 +9,7 @@ const NEXT = { new: 'printing', printing: 'ready', ready: 'done' };
 const fmt = (n, lang) => new Intl.NumberFormat(lang === 'ar' ? 'ar-AE' : 'en-AE', { style: 'currency', currency: 'AED', minimumFractionDigits: 2 }).format(n || 0);
 const startOfDay = (d = new Date()) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 const digits = (s) => String(s || '').replace(/\D/g, '');
+const attrsHasNote = (o) => o.items.some((it) => (it.attributes || []).some((a) => a.key === 'Customer note'));
 
 export default function StaffApp() {
   const [lang, setLang] = useStaffLang();
@@ -100,7 +101,7 @@ export default function StaffApp() {
       <section className="staff-totals" aria-label={t.totals.title}>
         <div><small>{t.totals.orders}</small><strong data-testid="total-orders">{totals.orders}</strong></div>
         <div><small>{t.totals.pages}</small><strong data-testid="total-pages">{totals.pages}</strong></div>
-        <div><small>{t.totals.revenue}</small><strong data-testid="total-revenue">{fmt(totals.revenue, lang)}</strong></div>
+        <div><small>{t.totals.revenue}</small><strong className="money" data-testid="total-revenue">{fmt(totals.revenue, lang)}</strong></div>
       </section>
 
       <section className="staff-filters">
@@ -136,7 +137,10 @@ export default function StaffApp() {
               <header className="job-head">
                 <div>
                   <strong className="job-no">{o.name}</strong>
-                  <time dateTime={o.createdAt}>{new Date(o.createdAt).toLocaleString(lang === 'ar' ? 'ar-AE' : 'en-GB', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}</time>
+                  <time dateTime={o.createdAt}>
+                    <b>{new Date(o.createdAt).toLocaleTimeString(lang === 'ar' ? 'ar-AE' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}</b>
+                    <span>{new Date(o.createdAt).toLocaleDateString(lang === 'ar' ? 'ar-AE' : 'en-GB', { day: 'numeric', month: 'short' })}</span>
+                  </time>
                 </div>
                 <span className={`job-status s-${o.status}`}>{t.status[o.status]}</span>
               </header>
@@ -152,28 +156,39 @@ export default function StaffApp() {
                 )}
               </div>
 
-              <ul className="job-items">
-                {o.items.map((it, i) => {
-                  const attrs = it.attributes || [];
-                  const get = (k) => attrs.find((a) => a.key === k)?.value;
-                  const refs = (get('File ref') || '').split(' | ').filter(Boolean);
-                  return (
-                    <li key={i}>
-                      <div className="job-item-title"><strong>{it.title}</strong> <span>× {it.quantity}</span></div>
-                      {attrs.length > 0 && (
-                        <dl className="job-attrs">
-                          {attrs.filter((a) => !['File ref', 'File URL', 'Print order'].includes(a.key)).map((a) => <div key={a.key}><dt>{a.key}</dt><dd>{a.value}</dd></div>)}
-                        </dl>
-                      )}
-                      {refs.map((ref, j) => (
-                        <a key={j} href="#" className="staff-btn primary file-btn" onClick={(e) => openFile(ref, e)} data-testid="open-file">
+              {(() => {
+                const attrs = o.items.flatMap((it) => it.attributes || []);
+                const get = (k) => attrs.find((a) => a.key === k)?.value;
+                const chips = [get('Paper size'), get('Colour'), get('Sides'), get('Copies') ? `× ${get('Copies')}` : null, get('Finishing') && get('Finishing') !== 'none' ? get('Finishing') : null].filter(Boolean);
+                const pageMap = Object.fromEntries((get('Pages') || '').split(' | ').map((s) => { const i = s.lastIndexOf(':'); return i > 0 ? [s.slice(0, i).trim(), s.slice(i + 1).trim()] : [s, '']; }));
+                const files = (get('Files') || '').split(' | ').filter(Boolean).map((n) => (pageMap[n] ? `${n} (${pageMap[n]} ${t.card.pages})` : n));
+                const noteTxt = get('Customer note');
+                const refs = [...new Set(attrs.filter((a) => a.key === 'File ref').flatMap((a) => a.value.split(' | ')).filter(Boolean))];
+                return (
+                  <>
+                    {chips.length > 0 && <div className="job-chips" data-testid="job-chips">{chips.map((c, i) => <span key={i} className="job-chip">{c}</span>)}</div>}
+                    {files.length > 0 && <p className="job-files">📄 {files.join(' · ')}</p>}
+                    {noteTxt && <p className="job-note"><b>{t.card.note}:</b> {noteTxt}</p>}
+                    <ul className="job-items">
+                      {o.items.map((it, i) => <li key={i}><span>{it.title}</span><b>× {it.quantity}</b></li>)}
+                    </ul>
+                    <div className="job-primary">
+                      {refs.length > 0 ? refs.map((ref, j) => (
+                        <a key={j} href="#" className="staff-btn big file-btn" onClick={(e) => openFile(ref, e)} data-testid="open-file">
                           📄 {t.card.openFile}{refs.length > 1 ? ` ${j + 1}` : ''}{ref.startsWith('demo:') ? ` · ${t.card.demoFile}` : ''}
                         </a>
-                      ))}
-                    </li>
-                  );
-                })}
-              </ul>
+                      )) : <span className="job-nofile">{t.card.noFile}</span>}
+                      {NEXT[o.status] ? (
+                        <button type="button" className="staff-btn primary big" onClick={() => setStatus(o, NEXT[o.status])} data-testid="next-status">
+                          {o.status === 'ready' && o.fulfilment === 'delivery' ? t.next.readyDelivery : t.next[o.status]} →
+                        </button>
+                      ) : (
+                        <span className="job-done">✓ {t.next.done}</span>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
 
               <div className="job-meta">
                 <span><b>{o.pagesPrinted || 0}</b> {t.card.pages}</span>
@@ -181,16 +196,9 @@ export default function StaffApp() {
                 <span className="ful">{o.fulfilment === 'delivery' ? `🚚 ${t.card.delivery}` : `🏪 ${t.card.collect}`}</span>
               </div>
               {o.address && <p className="job-note">📍 {o.address}</p>}
-              {o.note && <p className="job-note"><b>{t.card.note}:</b> {o.note}</p>}
+              {o.note && !attrsHasNote(o) && <p className="job-note"><b>{t.card.note}:</b> {o.note}</p>}
 
               <div className="job-actions">
-                {NEXT[o.status] ? (
-                  <button type="button" className="staff-btn primary big" onClick={() => setStatus(o, NEXT[o.status])} data-testid="next-status">
-                    {o.status === 'ready' && o.fulfilment === 'delivery' ? t.next.readyDelivery : t.next[o.status]} →
-                  </button>
-                ) : (
-                  <span className="job-done">✓ {t.next.done}</span>
-                )}
                 {o.status !== 'new' && (
                   <button type="button" className="staff-btn small ghost" onClick={() => setStatus(o, STATUSES[STATUSES.indexOf(o.status) - 1])}>← {t.back} {t.status[STATUSES[STATUSES.indexOf(o.status) - 1]]}</button>
                 )}

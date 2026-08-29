@@ -44,7 +44,7 @@ test.describe('staff app', () => {
 
     const card = cards.first();
     await expect(card.locator('.job-no')).toHaveText(/#P\d+/);
-    await expect(card.locator('.job-attrs').first()).toContainText('Paper size');
+    await expect(card.locator('[data-testid=job-chips]')).toContainText(/A4|A3/);
     await expect(card.locator('.job-contact a[href^="tel:"]')).toBeVisible();
     await expect(card.locator('.job-contact a[href^="https://wa.me/"]')).toBeVisible();
     await expect(card.locator('[data-testid=open-file]').first()).toBeVisible();

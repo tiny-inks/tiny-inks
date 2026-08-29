@@ -27,6 +27,7 @@ async function uploadSample(page, file = SAMPLE) {
   await page.setInputFiles('[data-testid=print-file-input]', file);
 }
 async function total(page) { return num(await page.locator('[data-testid=quote-total]').textContent()); }
+const next = (page) => page.locator('[data-testid=step-next]').click();
 
 test.describe('print service — customer', () => {
   test('quote maths: several option combinations match the config', async ({ page }) => {
@@ -42,7 +43,8 @@ test.describe('print service — customer', () => {
     expect(num(await page.locator('[data-testid=line-pages]').textContent())).toBeCloseTo(e.pagesCost, 2);
     if (e.topup) expect(num(await page.locator('[data-testid=line-minimum]').textContent())).toBeCloseTo(e.topup, 2);
 
-    // colour + double-sided + staple + 2 copies
+    // step 2 — colour + double-sided + staple + 2 copies
+    await next(page);
     await page.locator('[data-testid=opt-colour]').click();
     await page.locator('[data-testid=opt-double]').click();
     await page.locator('[data-testid=opt-staple]').click();
@@ -51,14 +53,16 @@ test.describe('print service — customer', () => {
     expect(await total(page)).toBeCloseTo(e.total, 2);
     expect(num(await page.locator('[data-testid=line-finishing]').textContent())).toBeCloseTo(e.finishingCost, 2);
 
-    // + delivery
+    // step 3 — + delivery
+    await next(page);
     await page.locator('[data-testid=fulfil-delivery]').click();
     e = expected({ pages: 3, copies: 2, color: 'colour', sided: 'double', finishing: 'staple', fulfilment: 'delivery' });
     expect(await total(page)).toBeCloseTo(e.total, 2);
     expect(num(await page.locator('[data-testid=line-delivery]').textContent())).toBeCloseTo(PRICING.delivery.fee, 2);
 
-    // A3 · colour · lamination · 100 copies → bulk tier kicks in
+    // back to step 2 — A3 · colour · lamination · 100 copies → bulk tier kicks in
     await page.locator('[data-testid=fulfil-collect]').click();
+    await page.locator('[data-testid=step-back]').click();
     await page.locator('[data-testid=opt-A3]').click();
     await page.locator('[data-testid=opt-single]').click();
     await page.locator('[data-testid=opt-lamination]').click();
@@ -75,7 +79,7 @@ test.describe('print service — customer', () => {
     await page.goto('/en/print');
     await uploadSample(page);
     await expect(page.locator('[data-testid=page-count]')).toHaveText('3');
-    await expect(page.locator('.file-row.ready .file-status.ok')).toBeVisible();
+    await expect(page.locator('.file-row.ready .page-pill')).toBeVisible(); // terracotta page-count pill
 
     // images: 1 page by default, still editable (we cannot count pages in non-PDFs)
     await uploadSample(page, path.resolve('public/staff/icon-192.png'));
@@ -88,7 +92,7 @@ test.describe('print service — customer', () => {
     await uploadSample(page, docx);
     const docRow = page.locator('.file-row').nth(2);
     await expect(docRow.locator('.file-pages input')).toBeVisible();
-    await expect(page.locator('[data-testid=print-submit]')).toBeDisabled(); // pages unknown → cannot submit
+    await expect(page.locator('[data-testid=step-next]')).toBeDisabled(); // pages unknown → cannot continue
     await docRow.locator('.file-pages input').fill('4');
 
     const encrypted = path.join(tmp, 'secret.pdf');
@@ -118,9 +122,11 @@ test.describe('print service — customer', () => {
     await page.goto('/en/print');
     await uploadSample(page);
     await expect(page.locator('[data-testid=page-count]')).toHaveText('3');
+    await next(page);
     await page.locator('[data-testid=opt-colour]').click();
     await page.locator('[data-testid=opt-spiral]').click();
     await page.locator('#print-note').fill('clear cover please');
+    await next(page);
     await page.locator('#pc-name').fill('E2E Tester');
     await page.locator('#pc-phone').fill('+971500000001');
     await page.locator('[data-testid=print-submit]').click();
@@ -162,12 +168,17 @@ test.describe('print service — customer', () => {
       await uploadSample(page);
       await expect(page.locator('[data-testid=page-count]')).toHaveText('3');
       await expectNoHScroll(page);
+      await expect(page.locator('.stepper-item.active')).toHaveCount(1);
+      await next(page);
       // option controls are real buttons: reachable + operable from the keyboard
       await page.locator('[data-testid=opt-colour]').focus();
       await page.keyboard.press('Enter');
       await expect(page.locator('[data-testid=opt-colour]')).toHaveAttribute('aria-checked', 'true');
-      await expect(page.locator('.dropzone')).toHaveAttribute('tabindex', '0');
-      await expect(page.locator('.print-sticky')).toBeVisible();
+      await expect(page.locator('.print-bar')).toBeVisible();
+      await expect(page.locator('[data-testid=sticky-total]')).toBeVisible();
+      // the breakdown opens from the sticky bar on phones
+      await page.locator('.bar-total').click();
+      await expect(page.locator('#quote-panel')).toBeVisible();
     });
   }
 });

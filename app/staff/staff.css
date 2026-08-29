@@ -31,9 +31,11 @@
 .staff-top-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
 .staff-totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
-.staff-totals div { background: var(--ink); color: var(--paper); border-radius: 14px; padding: 12px 10px; display: grid; gap: 2px; text-align: center; }
-.staff-totals small { font-weight: 700; opacity: 0.8; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; }
-.staff-totals strong { font-size: 1.35rem; }
+.staff-totals div { background: #fff; border: 2px solid var(--ink); border-radius: 14px; padding: 12px 8px; display: grid; gap: 2px; text-align: center; position: relative; overflow: hidden; }
+.staff-totals div::before { content: ''; position: absolute; inset-inline: 0; top: 0; height: 5px; background: var(--terracotta); }
+.staff-totals small { font-weight: 800; color: var(--slate); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.staff-totals strong { font-size: 1.5rem; line-height: 1.1; overflow-wrap: anywhere; }
+.staff-totals .money { font-size: clamp(0.95rem, 4vw, 1.25rem); }
 
 .staff-filters { display: grid; gap: 8px; margin-bottom: 14px; }
 .staff-input.search { min-height: 48px; font-size: 1rem; }
@@ -46,27 +48,36 @@
 .staff-h2 { font-size: 1.1rem; font-family: var(--font-body); font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--slate); margin: 10px 0 8px; display: flex; align-items: center; gap: 8px; }
 .staff-h2 span { background: var(--slate); color: #fff; border-radius: 999px; padding: 1px 9px; font-size: 0.85rem; }
 
-.job { background: #fff; border: 2px solid var(--ink); border-radius: 18px; padding: 14px; margin-bottom: 12px; display: grid; gap: 10px; }
-.job.status-done { border-color: var(--line); opacity: 0.85; }
+.job { background: #fff; border: 2px solid var(--line); border-inline-start: 8px solid var(--mustard); border-radius: 18px; padding: 14px; margin-bottom: 12px; display: grid; gap: 10px; }
+.job.status-printing { border-inline-start-color: var(--blue); }
+.job.status-ready { border-inline-start-color: var(--sage); }
+.job.status-done { border-inline-start-color: var(--line); opacity: 0.8; }
 .job-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-.job-no { font-size: 1.3rem; display: block; }
-.job-head time { color: var(--slate); font-weight: 700; font-size: 0.88rem; }
+.job-no { font-size: 1.7rem; display: block; line-height: 1.1; }
+.job-head time { display: flex; gap: 8px; align-items: baseline; color: var(--slate); font-weight: 700; font-size: 0.85rem; }
+.job-head time b { color: var(--ink); font-size: 1.05rem; }
 .job-status { font-weight: 800; font-size: 0.85rem; padding: 6px 12px; border-radius: 999px; background: var(--cream); white-space: nowrap; }
-.job-status.s-new { background: var(--blush); }
-.job-status.s-printing { background: var(--mustard); }
+.job-status.s-new { background: var(--mustard); }
+.job-status.s-printing { background: var(--blue); }
 .job-status.s-ready { background: var(--sage); }
 .job-status.s-done { background: var(--line); }
 .job-customer strong { font-size: 1.05rem; display: block; margin-bottom: 6px; }
 .job-contact { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .job-phone { font-weight: 700; color: var(--slate); }
-.job-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.job-items li { background: var(--paper-soft); border-radius: 12px; padding: 10px 12px; display: grid; gap: 6px; }
+.job-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.job-chip { background: var(--paper-soft); border: 1.5px solid var(--line); border-radius: 999px; padding: 5px 11px; font-weight: 800; font-size: 0.85rem; }
+.job-files { margin: 0; font-size: 0.9rem; font-weight: 700; word-break: break-word; }
+.job-files span { color: var(--slate); font-weight: 700; }
+.job-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 0.85rem; color: var(--slate); }
+.job-items li { display: flex; justify-content: space-between; gap: 10px; }
+.job-primary { display: grid; gap: 8px; }
+.job-nofile { color: var(--slate); font-weight: 700; font-size: 0.88rem; }
 .job-item-title span { color: var(--slate); font-weight: 700; }
 .job-attrs { margin: 0; display: grid; gap: 2px; font-size: 0.9rem; }
 .job-attrs div { display: flex; gap: 8px; }
 .job-attrs dt { color: var(--slate); font-weight: 700; min-width: 92px; flex: none; }
 .job-attrs dd { margin: 0; word-break: break-word; }
-.file-btn { justify-self: start; }
+.file-btn { width: 100%; }
 .job-meta { display: flex; gap: 8px 14px; flex-wrap: wrap; font-weight: 700; font-size: 0.95rem; }
 .job-meta .pay.ok { color: #2f6b3a; }
 .job-note { margin: 0; font-size: 0.95rem; }
