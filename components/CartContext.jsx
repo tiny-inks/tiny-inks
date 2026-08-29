@@ -1,5 +1,6 @@
 'use client';
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import { productImage } from '@/lib/product-images';
 import {
   isLive, shopifyFetch, normalizeCart,
   CART_CREATE, CART_QUERY, CART_LINES_ADD, CART_LINES_UPDATE, CART_LINES_REMOVE,
@@ -69,7 +70,7 @@ export function CartProvider({ children }) {
           title: product.title,
           handle: product.handle,
           price: product.price,
-          image: product.images?.[0]?.url || null,
+          image: productImage(product)?.url || null,
           qty,
         }];
       });

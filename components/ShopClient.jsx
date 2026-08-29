@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import ProductCard from './ProductCard';
 import EmptyState from './EmptyState';
+import { assignGridImages } from '@/lib/product-images';
 import { COLOR_SWATCHES, COLOR_NAMES } from '@/lib/mock-data';
 
 const PER_PAGE_OPTIONS = [12, 24, 48];
@@ -232,6 +233,8 @@ export default function ShopClient({
     </aside>
   );
 
+  const gridImages = assignGridImages(shown);
+
   return (
     <div>
 
@@ -294,7 +297,7 @@ export default function ShopClient({
             <>
               <div className="grid">
                 {shown.map((p) => (
-                  <ProductCard key={p.id} product={p} locale={locale} dict={dict} />
+                  <ProductCard key={p.id} product={p} locale={locale} dict={dict} image={gridImages[p.handle]} />
                 ))}
               </div>
               {visible < filtered.length && (

@@ -8,6 +8,7 @@ import ProductCard from '@/components/ProductCard';
 import Shelf from '@/components/Shelf';
 import WishlistButton from '@/components/WishlistButton';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import { productImages, withGridImages } from '@/lib/product-images';
 import { RecentlyViewedTracker, RecentlyViewedRow } from '@/components/RecentlyViewed';
 import { getDict } from '@/lib/dictionaries';
 import { getProduct, getProducts, getCollections, formatPrice } from '@/lib/products';
@@ -34,6 +35,8 @@ export default async function ProductPage({ params }) {
     .filter((p) => p.handle !== product.handle && p.productType === product.productType)
     .slice(0, 4);
   const relatedList = related.length ? related : all.filter((p) => p.handle !== product.handle).slice(0, 4);
+  const gallery = productImages(product);
+  const illustrative = gallery.length > 0 && gallery[0].fallback;
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -71,7 +74,10 @@ export default async function ProductPage({ params }) {
           />
         </div>
         <div className="wrap pdp">
-          <Gallery images={product.images} title={product.title} handle={product.handle} noImageLabel={dict.cartUi.noImage} />
+          <div>
+            <Gallery images={gallery} title={product.title} handle={product.handle} noImageLabel={dict.cartUi.noImage} />
+            {illustrative && <p className="img-note">{dict.product.illustrative}</p>}
+          </div>
           <div className="pdp-buy">
             <div className="card-type">{product.productType}</div>
             <h1 style={{ fontSize: 'clamp(1.9rem, 4vw, 3rem)' }}>{product.title}</h1>
@@ -119,8 +125,8 @@ export default async function ProductPage({ params }) {
             </div>
             <Reveal>
               <Shelf ariaLabel={dict.product.related}>
-                {relatedList.map((p) => (
-                  <ProductCard key={p.id} product={p} locale={locale} dict={dict} />
+                {withGridImages(relatedList).map(([p, image]) => (
+                  <ProductCard key={p.id} product={p} locale={locale} dict={dict} image={image} />
                 ))}
               </Shelf>
             </Reveal>

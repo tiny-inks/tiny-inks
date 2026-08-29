@@ -5,15 +5,18 @@ import { useCart } from './CartContext';
 import { useWishlist } from './WishlistContext';
 import Placeholder from './Placeholder';
 import { formatPrice } from '@/lib/products';
+import { productImage } from '@/lib/product-images';
 
 /* Dense marketplace card: white, 1px border, 4:3 photo (or designed
    placeholder), prominent price, always-visible round terracotta quick-add. */
-export default function ProductCard({ product, locale, dict }) {
+export default function ProductCard({ product, locale, dict, image }) {
   const cart = useCart();
   const wishlist = useWishlist();
   const [added, setAdded] = useState(false);
-  const imgA = product.images?.[0]?.url;
-  const imgB = product.images?.[1]?.url || imgA;
+  /* real Shopify image → category photo → coloured placeholder */
+  const img = image || productImage(product);
+  const imgA = img?.url;
+  const imgB = (!img?.fallback && product.images?.[1]?.url) || imgA;
   const href = `/${locale}/product/${product.handle}`;
   const saved = wishlist?.has(product.handle);
 
@@ -30,7 +33,7 @@ export default function ProductCard({ product, locale, dict }) {
         <Link href={href} className="card-media-link" aria-label={product.title} tabIndex={-1}>
           {imgA ? (
             <>
-              <img className="main" src={imgA} alt={product.title} loading="lazy" />
+              <img className={`main ${img.fallback ? 'is-fallback' : ''}`} src={imgA} alt={product.title} loading="lazy" />
               {imgB !== imgA && <img className="alt" src={imgB} alt="" loading="lazy" aria-hidden="true" />}
             </>
           ) : (

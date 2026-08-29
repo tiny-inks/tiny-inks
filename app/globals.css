@@ -1320,3 +1320,10 @@ h1 em, h2 em { color: var(--terracotta); }
 .empty-links-label { font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 800; color: var(--slate); }
 .drawer-body .empty { padding: 26px 8px; background: none; }
 .drawer-body .empty-search { max-width: 100%; }
+
+/* honest label under an illustrative (category stock) photo on the product page */
+.img-note {
+  margin: 10px 2px 0; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.01em;
+  color: var(--slate); display: flex; align-items: center; gap: 6px;
+}
+.img-note::before { content: 'ⓘ'; font-weight: 400; opacity: 0.75; }

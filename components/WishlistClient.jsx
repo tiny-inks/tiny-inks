@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import ProductCard from './ProductCard';
 import EmptyState from './EmptyState';
+import { assignGridImages } from '@/lib/product-images';
 import { useWishlist } from './WishlistContext';
 
 export default function WishlistClient({ products, dict, locale, collections = [] }) {
@@ -16,10 +17,11 @@ export default function WishlistClient({ products, dict, locale, collections = [
     );
   }
 
+  const gridImages = assignGridImages(saved);
   return (
     <div className="grid">
       {saved.map((p) => (
-        <ProductCard key={p.id} product={p} locale={locale} dict={dict} />
+        <ProductCard key={p.id} product={p} locale={locale} dict={dict} image={gridImages[p.handle]} />
       ))}
     </div>
   );

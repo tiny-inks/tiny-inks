@@ -3,6 +3,7 @@ import PromoCarousel from '@/components/PromoCarousel';
 import ProductMarquee from '@/components/ProductMarquee';
 import Reveal from '@/components/Reveal';
 import ProductCard from '@/components/ProductCard';
+import { withGridImages } from '@/lib/product-images';
 import PhotoFrame from '@/components/PhotoFrame';
 import Shelf from '@/components/Shelf';
 import UspBar from '@/components/UspBar';
@@ -52,8 +53,8 @@ function ProductRow({ id, eyebrow, title, cta, href, products, locale, dict }) {
         </div>
         <Reveal>
           <Shelf ariaLabel={title}>
-            {products.map((p) => (
-              <ProductCard key={p.id} product={p} locale={locale} dict={dict} />
+            {withGridImages(products).map(([p, image]) => (
+              <ProductCard key={p.id} product={p} locale={locale} dict={dict} image={image} />
             ))}
           </Shelf>
         </Reveal>

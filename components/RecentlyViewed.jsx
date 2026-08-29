@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import ProductCard from './ProductCard';
 import Shelf from './Shelf';
+import { withGridImages } from '@/lib/product-images';
 
 const LS_KEY = 'ti_recent';
 const MAX = 8;
@@ -47,8 +48,8 @@ export function RecentlyViewedRow({ products, dict, locale, excludeHandle = null
           <h2 style={{ marginBottom: 0 }}>{dict.recently.title}</h2>
         </div>
         <Shelf ariaLabel={dict.recently.title}>
-          {items.map((p) => (
-            <ProductCard key={p.id} product={p} locale={locale} dict={dict} />
+          {withGridImages(items).map(([p, image]) => (
+            <ProductCard key={p.id} product={p} locale={locale} dict={dict} image={image} />
           ))}
         </Shelf>
       </div>

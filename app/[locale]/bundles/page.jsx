@@ -3,6 +3,7 @@ import Reveal from '@/components/Reveal';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import Shelf from '@/components/Shelf';
 import ProductCard from '@/components/ProductCard';
+import { withGridImages } from '@/lib/product-images';
 import { getDict } from '@/lib/dictionaries';
 import { getProducts, getCollectionWithProducts } from '@/lib/products';
 
@@ -41,8 +42,8 @@ export default async function BundlesPage({ params }) {
             <p className="lede" style={{ marginBottom: 40 }}>{t.lede}</p>
           </Reveal>
           <div className="grid grid-3">
-            {bundles.map((p) => (
-              <ProductCard key={p.id} product={p} locale={locale} dict={dict} />
+            {withGridImages(bundles).map(([p, image]) => (
+              <ProductCard key={p.id} product={p} locale={locale} dict={dict} image={image} />
             ))}
           </div>
         </div>
@@ -80,8 +81,8 @@ export default async function BundlesPage({ params }) {
             </div>
             <Reveal>
               <Shelf ariaLabel={t.newTitle}>
-                {newest.map((p) => (
-                  <ProductCard key={p.id} product={p} locale={locale} dict={dict} />
+                {withGridImages(newest).map(([p, image]) => (
+                  <ProductCard key={p.id} product={p} locale={locale} dict={dict} image={image} />
                 ))}
               </Shelf>
             </Reveal>
