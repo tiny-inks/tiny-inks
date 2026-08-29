@@ -8,7 +8,6 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
 import BottomNav from '@/components/BottomNav';
-import ScrollProgress from '@/components/ScrollProgress';
 
 
 export function generateStaticParams() {
@@ -67,8 +66,7 @@ export default async function LocaleLayout({ children, params }) {
         </a>
         <CartProvider>
           <WishlistProvider>
-            <ScrollProgress />
-            <Header dict={dict} locale={locale} collections={collections} />
+            <Header dict={dict} locale={locale} />
             <main id="content">{children}</main>
             <Footer dict={dict} locale={locale} collections={collections} />
             <CartDrawer dict={dict} locale={locale} collections={collections} />

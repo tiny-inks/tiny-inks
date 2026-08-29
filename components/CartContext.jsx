@@ -4,11 +4,16 @@ import { productImage } from '@/lib/product-images';
 import {
   isLive, shopifyFetch, normalizeCart,
   CART_CREATE, CART_QUERY, CART_LINES_ADD, CART_LINES_UPDATE, CART_LINES_REMOVE,
+  CART_ATTRIBUTES_UPDATE, CART_NOTE_UPDATE, CART_BUYER_IDENTITY_UPDATE,
 } from '@/lib/shopify';
 
 const CartCtx = createContext(null);
 const LS_ID = 'ti_cart_id';
 const LS_DEMO = 'ti_demo_cart';
+const LS_DELIVERY = 'ti_delivery';
+const EMPTY_DELIVERY = { name: '', phone: '', email: '', address: '', lat: '', lon: '' };
+const PHONE_RE = /^[+\d][\d\s()-]{6,}$/;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function CartProvider({ children }) {
   const live = isLive();
@@ -21,6 +26,26 @@ export function CartProvider({ children }) {
   // localStorage before the load effect's setItems lands (and StrictMode's
   // double-mount then reloads the clobbered empty value)
   const [hydrated, setHydrated] = useState(false);
+  /* delivery details (name/phone/email/address) — kept on the device, sent to
+     Shopify as cart attributes + note + buyer identity right before checkout */
+  const [delivery, setDeliveryState] = useState(EMPTY_DELIVERY);
+  const [deliveryError, setDeliveryError] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(LS_DELIVERY) || 'null');
+      if (saved && typeof saved === 'object') setDeliveryState({ ...EMPTY_DELIVERY, ...saved });
+    } catch {}
+  }, []);
+  const setDelivery = useCallback((d) => {
+    setDeliveryState(d);
+    setDeliveryError(false);
+    try { localStorage.setItem(LS_DELIVERY, JSON.stringify(d)); } catch {}
+  }, []);
+  const deliveryValid = Boolean(
+    delivery.name.trim() && PHONE_RE.test(delivery.phone.trim()) && delivery.address.trim()
+      && (!delivery.email.trim() || EMAIL_RE.test(delivery.email.trim()))
+  );
 
   useEffect(() => {
     if (live) {
@@ -117,14 +142,39 @@ export function CartProvider({ children }) {
     applyCart(d.cartLinesRemove.cart);
   }, [live, cartId, applyCart]);
 
-  const checkout = useCallback(() => {
-    if (live && checkoutUrl) window.location.href = checkoutUrl;
-  }, [live, checkoutUrl]);
+  /* Hand-off to Shopify checkout. Returns false (and flags the form) when the
+     delivery details are incomplete; otherwise attaches them to the cart and
+     redirects. Attaching is best-effort — a failed mutation never blocks paying. */
+  const checkout = useCallback(async () => {
+    if (!live || !checkoutUrl) return false;
+    if (!deliveryValid) { setDeliveryError(true); return false; }
+    setBusy(true);
+    const name = delivery.name.trim(), phone = delivery.phone.trim(), email = delivery.email.trim(), address = delivery.address.trim();
+    try {
+      const attributes = [
+        { key: 'Delivery name', value: name },
+        { key: 'Phone', value: phone },
+        { key: 'Delivery address', value: address },
+        ...(email ? [{ key: 'Email', value: email }] : []),
+        ...(delivery.lat ? [{ key: 'Map location', value: `https://maps.google.com/?q=${delivery.lat},${delivery.lon}` }] : []),
+      ];
+      await shopifyFetch(CART_ATTRIBUTES_UPDATE, { cartId, attributes });
+      await shopifyFetch(CART_NOTE_UPDATE, { cartId, note: `Delivery: ${name} · ${phone}${email ? ` · ${email}` : ''}\n${address}` });
+      if (email || phone) {
+        const buyerIdentity = { countryCode: 'AE', ...(email ? { email } : {}), ...(/^\+\d{8,15}$/.test(phone.replace(/[\s()-]/g, '')) ? { phone: phone.replace(/[\s()-]/g, '') } : {}) };
+        await shopifyFetch(CART_BUYER_IDENTITY_UPDATE, { cartId, buyerIdentity }).catch(() => {});
+      }
+    } catch (e) {
+      console.error('Could not attach delivery details:', e);
+    }
+    window.location.href = checkoutUrl;
+    return true;
+  }, [live, checkoutUrl, cartId, delivery, deliveryValid]);
 
   const count = useMemo(() => items.reduce((s, x) => s + x.qty, 0), [items]);
   const subtotal = useMemo(() => items.reduce((s, x) => s + x.qty * x.price, 0), [items]);
 
-  const value = { items, count, subtotal, open, setOpen, add, setQty, remove, checkout, live, busy };
+  const value = { items, count, subtotal, open, setOpen, add, setQty, remove, checkout, live, busy, delivery, setDelivery, deliveryValid, deliveryError };
   return <CartCtx.Provider value={value}>{children}</CartCtx.Provider>;
 }
 

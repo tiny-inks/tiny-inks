@@ -169,3 +169,10 @@ and living in `components/reactbits/`. All of them turn off under `prefers-reduc
 - If Shopify ever retires API version `2026-01`, bump `NEXT_PUBLIC_SHOPIFY_API_VERSION` to a current one.
 
 Made with ✦ for Tiny Inks.
+
+## Contact form, delivery details and the home video
+
+- **Contact form** (`/contact`) and the newsletter box post to `app/api/contact/route.js`. Set `RESEND_API_KEY` + `CONTACT_TO_EMAIL` in Vercel (or `FORMSPREE_FORM_ID`) to deliver messages by email. Until one of them is set the form never pretends to succeed — it shows WhatsApp / email buttons that carry the visitor's text.
+- **Social icons** show only Instagram, TikTok and WhatsApp, from `NEXT_PUBLIC_INSTAGRAM_URL`, `NEXT_PUBLIC_TIKTOK_URL`, `NEXT_PUBLIC_WHATSAPP_NUMBER`. Shop address and hours come from `NEXT_PUBLIC_SHOP_ADDRESS`, `NEXT_PUBLIC_SHOP_MAPS_URL`, `NEXT_PUBLIC_SHOP_HOURS`.
+- **Delivery details on /cart** (name, phone, email, address, "Locate me") are saved on the device and, in live mode, attached to the Shopify cart as attributes + note + buyer identity right before the customer is sent to Shopify checkout. They appear on the order in Shopify admin under *Additional details*. Checkout itself is untouched.
+- **Home video loop**: swap `public/video/tiny-inks-loop.webm` and `public/video/poster.jpg` (see `public/video/README.md`).

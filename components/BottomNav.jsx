@@ -2,18 +2,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCart } from './CartContext';
+import { OPEN_SEARCH_EVENT } from './Header';
 
-/* Phone-only tab bar: Home / Shop / Search / Cart. Everything else lives in
-   the hamburger menu (no duplicate navigation). Hidden on product pages
-   where the sticky buy bar takes the slot. */
+/* Phone-only tab bar: Home / Shop / Search / Cart. Search asks the header to
+   drop its search row down. Hidden on product pages where the sticky buy bar
+   takes the slot. */
 export default function BottomNav({ dict, locale }) {
   const pathname = usePathname();
   const cart = useCart();
 
-  const focusSearch = () => {
+  const openSearch = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    const el = document.getElementById('site-search-mobile') || document.getElementById('site-search');
-    setTimeout(() => el?.focus(), 250);
+    window.dispatchEvent(new CustomEvent(OPEN_SEARCH_EVENT));
   };
 
   const icon = {
@@ -31,7 +31,7 @@ export default function BottomNav({ dict, locale }) {
       <Link href={`/${locale}/shop`} className={`bottom-tab ${pathname.startsWith(`/${locale}/shop`) ? 'active' : ''}`}>
         <span className="bottom-tab-icon">{icon.shop}</span><span>{dict.nav.shop}</span>
       </Link>
-      <button type="button" className="bottom-tab" onClick={focusSearch}>
+      <button type="button" className="bottom-tab" onClick={openSearch}>
         <span className="bottom-tab-icon">{icon.search}</span><span>{dict.search.label}</span>
       </button>
       <Link href={`/${locale}/cart`} className={`bottom-tab ${pathname === `/${locale}/cart` ? 'active' : ''}`}>

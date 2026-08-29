@@ -11,7 +11,8 @@ import Breadcrumbs from '@/components/Breadcrumbs';
 import { productImages, withGridImages } from '@/lib/product-images';
 import { RecentlyViewedTracker, RecentlyViewedRow } from '@/components/RecentlyViewed';
 import { getDict } from '@/lib/dictionaries';
-import { getProduct, getProducts, getCollections, formatPrice } from '@/lib/products';
+import { getProduct, getProducts, getCollections, getCollectionWithProducts, formatPrice } from '@/lib/products';
+import { FREE_DELIVERY_THRESHOLD, getBusiness } from '@/lib/site';
 
 export async function generateMetadata({ params }) {
   const product = await getProduct(params.handle, params.locale);
@@ -23,20 +24,65 @@ export async function generateMetadata({ params }) {
   };
 }
 
+/* tags that describe the product (not the colour marker) */
+const realTags = (p) => (p.tags || []).filter((t) => !/^color:/.test(t));
+
+function Row({ id, title, products, locale, dict }) {
+  if (!products.length) return null;
+  return (
+    <section className="section row-section" id={id} style={{ paddingTop: 0 }}>
+      <div className="wrap">
+        <div className="section-head">
+          <Reveal><h2 style={{ marginBottom: 0 }}>{title}</h2></Reveal>
+        </div>
+        <Reveal>
+          <Shelf ariaLabel={title}>
+            {withGridImages(products).map(([p, image]) => (
+              <ProductCard key={p.id} product={p} locale={locale} dict={dict} image={image} />
+            ))}
+          </Shelf>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
 export default async function ProductPage({ params }) {
   const locale = params.locale === 'ar' ? 'ar' : 'en';
   const dict = getDict(locale);
+  const t = dict.product;
   const product = await getProduct(params.handle, locale);
   if (!product) notFound();
 
   const [all, collections] = await Promise.all([getProducts(locale), getCollections(locale)]);
   const col = collections.find((c) => product.collections?.includes(c.handle));
-  const related = all
-    .filter((p) => p.handle !== product.handle && p.productType === product.productType)
-    .slice(0, 4);
-  const relatedList = related.length ? related : all.filter((p) => p.handle !== product.handle).slice(0, 4);
+  const others = all.filter((p) => p.handle !== product.handle);
+
+  /* "You may also like" — the same Shopify collection (falls back to same type, then newest) */
+  let sameCollection = [];
+  if (col) {
+    const data = await getCollectionWithProducts(col.handle, locale);
+    sameCollection = (data?.products || []).filter((p) => p.handle !== product.handle);
+  }
+  const alsoLike = (sameCollection.length ? sameCollection
+    : others.filter((p) => p.productType === product.productType).length ? others.filter((p) => p.productType === product.productType)
+    : others).slice(0, 8);
+
+  /* "Frequently bought together" — shares a tag or a brand but is a different
+     kind of product (a pen for a notebook, not another notebook) */
+  const tags = new Set(realTags(product));
+  const alsoSet = new Set(alsoLike.map((p) => p.handle));
+  const complementary = others.filter((p) => p.productType !== product.productType && !alsoSet.has(p.handle));
+  const scored = complementary
+    .map((p) => ({ p, s: (realTags(p).some((x) => tags.has(x)) ? 2 : 0) + (p.vendor && p.vendor === product.vendor ? 1 : 0) + (p.tags?.includes('bestseller') ? 1 : 0) }))
+    .sort((a, b) => b.s - a.s)
+    .map((x) => x.p);
+  const boughtTogether = (scored.length ? scored : others).slice(0, 4);
+
   const gallery = productImages(product);
   const illustrative = gallery.length > 0 && gallery[0].fallback;
+  const b = getBusiness();
+  const paragraphs = (product.description || '').split(/\n{2,}|\r?\n/).map((s) => s.trim()).filter(Boolean);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -44,7 +90,7 @@ export default async function ProductPage({ params }) {
     name: product.title,
     description: product.description,
     image: (product.images || []).map((i) => i.url),
-    brand: { '@type': 'Brand', name: 'Tiny Inks' },
+    brand: { '@type': 'Brand', name: product.vendor || 'Tiny Inks' },
     offers: {
       '@type': 'Offer',
       priceCurrency: product.currency || 'AED',
@@ -54,6 +100,12 @@ export default async function ProductPage({ params }) {
         : 'https://schema.org/OutOfStock',
     },
   };
+
+  const offers = [
+    { icon: '❀', t: t.offerWrap, d: t.offerWrapText },
+    { icon: '⚡', t: t.offerDelivery, d: t.offerDeliveryText.replace('{amount}', formatPrice(FREE_DELIVERY_THRESHOLD, 'AED', locale)) },
+    { icon: '▣', t: t.offerBulk, d: t.offerBulkText, href: `${b.whatsappHref}?text=${encodeURIComponent(dict.footerUi.bulkMsg + product.title)}` },
+  ];
 
   return (
     <>
@@ -76,16 +128,18 @@ export default async function ProductPage({ params }) {
         <div className="wrap pdp">
           <div>
             <Gallery images={gallery} title={product.title} handle={product.handle} noImageLabel={dict.cartUi.noImage} />
-            {illustrative && <p className="img-note">{dict.product.illustrative}</p>}
+            {illustrative && <p className="img-note">{t.illustrative}</p>}
           </div>
           <div className="pdp-buy">
-            <div className="card-type">{product.productType}</div>
+            {col ? <Link href={`/${locale}/shop/${col.handle}`} className="card-type">{col.title}</Link> : <div className="card-type">{product.productType}</div>}
             <h1 style={{ fontSize: 'clamp(1.9rem, 4vw, 3rem)' }}>{product.title}</h1>
+            {product.vendor && product.vendor !== 'Tiny Inks' ? <div className="pdp-vendor">{t.by} {product.vendor}</div> : null}
             <div className="pdp-price-row">
               <div className="pdp-price">{formatPrice(product.price, product.currency, locale)}</div>
+              {product.compareAtPrice ? <div className="mcard-compare">{formatPrice(product.compareAtPrice, product.currency, locale)}</div> : null}
               <div className={`card-stock ${product.available ? 'in' : 'out'}`}>
                 <span className="stock-dot" aria-hidden="true" />
-                {product.available ? dict.product.instock : dict.product.soldout}
+                {product.available ? t.instock : t.soldout}
               </div>
             </div>
             <div className="buy-with-wish">
@@ -93,46 +147,70 @@ export default async function ProductPage({ params }) {
               <WishlistButton handle={product.handle} dict={dict} />
             </div>
             <div className="pdp-meta">
-              <div><strong>{dict.product.shipping}:</strong> {dict.product.shippingText}</div>
-              <div><strong>{dict.product.wrap}:</strong> {dict.product.wrapText}</div>
-              <div>
-                <Link href={`/${locale}/policies/returns`} className="pdp-link">
-                  {dict.product.returnsLink}
-                </Link>
+              <div><strong>{t.shipping}:</strong> {t.shippingText}</div>
+              <div><strong>{t.wrap}:</strong> {t.wrapText}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* after the buy box, in this order: description · delivery/returns · also like · bought together · offers */}
+        <div className="wrap pdp-below">
+          <div className="pdp-desc" id="description">
+            <h2>{t.descTitle}</h2>
+            {product.descriptionHtml ? (
+              <div className="prose" dangerouslySetInnerHTML={{ __html: product.descriptionHtml }} />
+            ) : paragraphs.length ? (
+              <div className="prose">{paragraphs.map((p, i) => <p key={i}>{p}</p>)}</div>
+            ) : (
+              <p className="prose">{t.noDesc}</p>
+            )}
+          </div>
+
+          <div className="accordion" id="delivery-returns">
+            <details className="acc-item" open>
+              <summary>{t.deliveryTitle}</summary>
+              <div className="acc-body">
+                <p>{t.shippingText}</p>
+                <ul>
+                  {t.deliveryPoints.map((s, i) => <li key={i}>{s}</li>)}
+                </ul>
+                <Link href={`/${locale}/policies/shipping`} className="pdp-link">{dict.policies.shipping} →</Link>
               </div>
-            </div>
-            <div className="pdp-bulk">
-              <strong>{dict.product.bulk}</strong>
-              <a
-                href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '971500000000'}`}
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-ghost btn-sm"
-              >
-                {dict.product.bulkCta}
-              </a>
-            </div>
-            <p className="lede" style={{ fontSize: '1.02rem' }}>{product.description}</p>
+            </details>
+            <details className="acc-item">
+              <summary>{t.returnsTitle}</summary>
+              <div className="acc-body">
+                <ul>
+                  {t.returnsPoints.map((s, i) => <li key={i}>{s}</li>)}
+                </ul>
+                <Link href={`/${locale}/policies/returns`} className="pdp-link">{dict.policies.returns} →</Link>
+              </div>
+            </details>
           </div>
         </div>
       </section>
 
-      {relatedList.length > 0 && (
-        <section className="section row-section" style={{ paddingTop: 0 }}>
-          <div className="wrap">
-            <div className="section-head">
-              <Reveal><h2 style={{ marginBottom: 0 }}>{dict.product.related}</h2></Reveal>
-            </div>
-            <Reveal>
-              <Shelf ariaLabel={dict.product.related}>
-                {withGridImages(relatedList).map(([p, image]) => (
-                  <ProductCard key={p.id} product={p} locale={locale} dict={dict} image={image} />
-                ))}
-              </Shelf>
-            </Reveal>
+      <Row id="also-like" title={t.alsoLike} products={alsoLike} locale={locale} dict={dict} />
+      <Row id="bought-together" title={t.related} products={boughtTogether} locale={locale} dict={dict} />
+
+      {/* offers strip */}
+      <section className="section row-section" style={{ paddingTop: 0 }}>
+        <div className="wrap">
+          <div className="offers-strip">
+            {offers.map((o, i) => {
+              const inner = (
+                <>
+                  <span className="offer-glyph" aria-hidden="true">{o.icon}</span>
+                  <span><strong>{o.t}</strong><small>{o.d}</small></span>
+                </>
+              );
+              return o.href
+                ? <a key={i} className="offer" href={o.href} target="_blank" rel="noreferrer">{inner}</a>
+                : <div key={i} className="offer">{inner}</div>;
+            })}
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       <RecentlyViewedTracker handle={product.handle} />
       <RecentlyViewedRow products={all} dict={dict} locale={locale} excludeHandle={product.handle} />

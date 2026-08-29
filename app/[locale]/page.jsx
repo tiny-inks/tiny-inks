@@ -11,13 +11,10 @@ import { ShopByColor, ShopByPrice, GiftFinder, BulkBand, FaqShort } from '@/comp
 import { RecentlyViewedRow } from '@/components/RecentlyViewed';
 import { NewsletterForm } from '@/components/Forms';
 import { getDict } from '@/lib/dictionaries';
+import VideoLoop from '@/components/VideoLoop';
 import { getProducts, getCollections, getCollectionWithProducts } from '@/lib/products';
-import { tintFor } from '@/components/Placeholder';
 import { FAQ } from '@/content/policies';
 import { PHOTOS, IMAGES, imgAlt } from '@/lib/images';
-
-/* tint fallback cycle for live collections that carry no demo color */
-const TILE_TINTS = ['var(--blue)', 'var(--sage)', 'var(--cream)', 'var(--mustard)', 'var(--blush)', 'var(--terracotta)'];
 
 const REVIEWS = {
   en: [
@@ -89,11 +86,52 @@ export default async function Home({ params }) {
 
   return (
     <>
+      {/* 1 — hero / promo carousel with the offers */}
       <PromoCarousel dict={dict} locale={locale} />
+
+      {/* 2 — trust row */}
       <UspBar dict={dict} />
 
-      {/* two wide promo tiles */}
-      <section className="section row-section">
+      {/* 3 — best sellers */}
+      <ProductRow
+        id="best-sellers"
+        eyebrow={dict.home.bestEyebrow}
+        title={dict.home.bestTitle}
+        cta={dict.home.viewAll}
+        href={`/${locale}/shop`}
+        products={shelf}
+        locale={locale}
+        dict={dict}
+      />
+
+      {/* 4 — new arrivals */}
+      <ProductRow
+        id="new-arrivals"
+        eyebrow={dict.home.newEyebrow}
+        title={dict.home.newTitle}
+        cta={dict.home.viewAll}
+        href={`/${locale}/shop?sort=new`}
+        products={newest}
+        locale={locale}
+        dict={dict}
+      />
+
+      {/* 5 — gift sets */}
+      {bundles.length > 0 && (
+        <ProductRow
+          id="gift-sets"
+          eyebrow={dict.home.bundlesEyebrow}
+          title={dict.home.bundlesTitle}
+          cta={dict.home.bundlesCta}
+          href={`/${locale}/bundles`}
+          products={bundles}
+          locale={locale}
+          dict={dict}
+        />
+      )}
+
+      {/* 6 — offers / promo band */}
+      <section className="section row-section" id="offers">
         <div className="wrap promo-tiles">
           {dict.promos.map((promo, i) => {
             const meta = PROMO_META[i];
@@ -113,99 +151,22 @@ export default async function Home({ params }) {
         </div>
       </section>
 
+      {/* 7 — short looping video (poster only under reduced motion) */}
+      <VideoLoop dict={dict} locale={locale} />
+
       {/* infinite product-photo loop */}
       <ProductMarquee products={products} locale={locale} label={dict.marqueeRow.label} />
 
-      <ProductRow
-        id="best-sellers"
-        eyebrow={dict.home.bestEyebrow}
-        title={dict.home.bestTitle}
-        cta={dict.home.viewAll}
-        href={`/${locale}/shop`}
-        products={shelf}
-        locale={locale}
-        dict={dict}
-      />
-
-      {/* 1 — shop by color (signature) */}
+      {/* signature browse helpers */}
       <ShopByColor dict={dict} locale={locale} />
-
-      {/* 2 — shop by price */}
       <ShopByPrice dict={dict} locale={locale} />
-
-      {/* 3 — gift finder */}
       <GiftFinder dict={dict} locale={locale} />
-
-      {/* 4 — bulk & school orders */}
       <BulkBand dict={dict} />
-
-      {/* 5 — recently viewed (hidden while empty) */}
       <RecentlyViewedRow products={products} dict={dict} locale={locale} />
-
-      {/* 6 — short FAQ */}
       <FaqShort dict={dict} locale={locale} items={faqShort} />
 
-      {/* category grid */}
-      <section className="section row-section">
-        <div className="wrap">
-          <Reveal>
-            <div className="eyebrow">{dict.home.categoriesEyebrow}</div>
-            <h2>{dict.home.categoriesTitle}</h2>
-          </Reveal>
-          <div className="tiles tiles-cats" style={{ marginTop: 22 }}>
-            {collections.map((c, i) => {
-              const count = products.filter((p) => p.collections?.includes(c.handle)).length;
-              return (
-                <Reveal key={c.handle} delay={Math.min(i * 0.05, 0.3)}>
-                  <Link href={`/${locale}/shop/${c.handle}`} className="tile">
-                    <div className="tile-media">
-                      {c.image?.url ? (
-                        <>
-                          <img src={c.image.url} alt={c.image.alt || c.title} loading="lazy" />
-                          <div className="tile-tint" style={{ background: c.color || TILE_TINTS[i % TILE_TINTS.length] }} />
-                        </>
-                      ) : (
-                        <div className="tile-solid" style={{ background: c.color || tintFor(c.handle) }} aria-hidden="true">
-                          <span>✦</span>
-                        </div>
-                      )}
-                      <div className="tile-overlay">
-                        <h3>{c.title}</h3>
-                        <p>{count} {dict.shop.results}</p>
-                      </div>
-                    </div>
-                  </Link>
-                </Reveal>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      <ProductRow
-        eyebrow={dict.home.newEyebrow}
-        title={dict.home.newTitle}
-        cta={dict.home.viewAll}
-        href={`/${locale}/shop`}
-        products={newest}
-        locale={locale}
-        dict={dict}
-      />
-
-      {bundles.length > 0 && (
-        <ProductRow
-          eyebrow={dict.home.bundlesEyebrow}
-          title={dict.home.bundlesTitle}
-          cta={dict.home.bundlesCta}
-          href={`/${locale}/bundles`}
-          products={bundles}
-          locale={locale}
-          dict={dict}
-        />
-      )}
-
-      {/* reviews */}
-      <section className="section row-section">
+      {/* 8 — reviews */}
+      <section className="section row-section" id="reviews">
         <div className="wrap">
           <Reveal><h2>{dict.home.reviewsTitle}</h2></Reveal>
           <div className="cards-3" style={{ marginTop: 22 }}>
@@ -222,23 +183,23 @@ export default async function Home({ params }) {
         </div>
       </section>
 
-      {/* newsletter */}
-      <section className="section row-section">
+      {/* 9 — newsletter */}
+      <section className="section row-section" id="newsletter">
         <div className="wrap">
           <Reveal>
             <div className="block cream grain" style={{ textAlign: 'center' }}>
               <h2>{dict.home.newsTitle}</h2>
               <p className="lede" style={{ margin: '0 auto 26px' }}>{dict.home.newsLede}</p>
               <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <NewsletterForm dict={dict} />
+                <NewsletterForm dict={dict} locale={locale} />
               </div>
             </div>
           </Reveal>
         </div>
       </section>
 
-      {/* instagram polaroids — last */}
-      <section className="section row-section" style={{ paddingBottom: 10 }}>
+      {/* 10 — instagram polaroids — last */}
+      <section className="section row-section" id="instagram" style={{ paddingBottom: 10 }}>
         <div className="wrap">
           <div className="section-head">
             <Reveal><h2 style={{ marginBottom: 0 }}>{dict.home.igTitle}</h2></Reveal>

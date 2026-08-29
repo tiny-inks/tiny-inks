@@ -9,16 +9,39 @@ for (const locale of LOCALES) {
       await expect(page.locator('.carousel')).toBeVisible();
       await scrollThrough(page);
 
-      // every key section exists
-      for (const sel of [
-        '.usp-bar', '.promo-tiles', '.pmq', '#best-sellers',
-        '.color-strip', '.price-chips', '.gift-tiles', '.bulk-band',
-        '.faq-list', '.tiles-cats', '.cards-3', '.ig-strip',
-      ]) {
-        await expect(page.locator(sel).first(), sel).toBeAttached();
+      // every key section exists, in the agreed order
+      const order = [
+        '.carousel', '.usp-bar', '#best-sellers', '#new-arrivals', '#gift-sets', '#offers',
+        '.video-loop', '.pmq', '.color-strip', '.price-chips', '.gift-tiles', '.bulk-band',
+        '.faq-list', '#reviews .cards-3', '#newsletter', '.ig-strip',
+      ];
+      let lastTop = -1;
+      for (const sel of order) {
+        const el = page.locator(sel).first();
+        await expect(el, sel).toBeAttached();
+        const top = await el.evaluate((e) => e.getBoundingClientRect().top + window.scrollY);
+        expect(top, `${sel} should come after the previous section`).toBeGreaterThanOrEqual(lastTop);
+        lastTop = top;
       }
       await expectNoHScroll(page);
       assertClean(errors);
+    });
+
+    test(`video loop is muted, inline, looping, with a poster [${locale}]`, async ({ page }) => {
+      await page.goto(`/${locale}`);
+      const video = page.locator('.video-loop video');
+      await expect(video).toHaveAttribute('playsinline', '');
+      await expect(video).toHaveAttribute('loop', '');
+      await expect(video).toHaveAttribute('poster', /\/video\//);
+      const muted = await video.evaluate((v) => v.muted && v.autoplay);
+      expect(muted).toBe(true);
+      await expect(page.locator('.video-loop .video-poster')).toHaveAttribute('alt', /.+/);
+
+      // reduced motion: the video element is hidden, the poster stays
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.reload();
+      await expect(page.locator('.video-loop video')).toBeHidden();
+      await expect(page.locator('.video-loop .video-poster')).toBeVisible();
     });
 
     test(`section CTAs navigate correctly [${locale}]`, async ({ page }) => {

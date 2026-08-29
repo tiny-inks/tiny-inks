@@ -16,6 +16,7 @@ export default function ShopClient({
   collections = [],
   currentCollection = null,
   collectionTitle = null,
+  showCategoriesLink = false,
 }) {
   const t = dict.shop;
   const tu = dict.shopUi;
@@ -244,6 +245,11 @@ export default function ShopClient({
           <strong>{filtered.length}</strong> {tu.itemsIn} {collectionTitle || tu.breadcrumbShop}
         </span>
         <div className="toolbar-actions">
+          {showCategoriesLink && (
+            <a href="#categories" className="chip cats-link">
+              <span aria-hidden="true">↑</span> {t.backToCategories}
+            </a>
+          )}
           <label className="perpage-label">
             {tu.perPage}
             <select className="select" value={perPage} onChange={(e) => setPerPage(Number(e.target.value))}>

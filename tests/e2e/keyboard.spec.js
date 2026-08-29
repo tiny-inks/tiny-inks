@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('keyboard-only', () => {
   test.skip(({ isMobile }) => !!isMobile, 'keyboard pass runs on desktop');
 
-  test('tab reaches skip link, search, nav, cart; focus is visible', async ({ page }) => {
+  test('tab reaches skip link, nav, search, cart; focus is visible', async ({ page }) => {
     await page.goto('/en');
     await page.keyboard.press('Tab'); // skip link first
     const first = await page.evaluate(() => document.activeElement?.className || '');
@@ -15,24 +15,19 @@ test.describe('keyboard-only', () => {
       await page.keyboard.press('Tab');
       const info = await page.evaluate(() => {
         const el = document.activeElement;
-        const cs = getComputedStyle(el);
-        return {
-          cls: el.className?.toString() || el.tagName,
-          outline: cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0,
-          tag: el.tagName,
-        };
+        return { cls: el.className?.toString() || el.tagName, tag: el.tagName };
       });
       seen.add(`${info.tag}:${info.cls}`);
     }
     const all = [...seen].join(',');
-    for (const cls of ['brand', 'icon-btn', 'locale-btn', 'mk-shop-caret']) {
+    for (const cls of ['brand', 'hdr-link', 'icon-btn', 'locale-btn']) {
       expect(all, `expected tab stop ${cls}`).toContain(cls);
     }
     // search input reachable
     expect(all).toContain('INPUT');
 
-    // focus ring visible on a focused button
-    await page.locator('.mk-shop-caret').focus();
+    // focus ring visible on a focused nav link
+    await page.locator('.hdr-link').first().focus();
     const ring = await page.evaluate(() => {
       const cs = getComputedStyle(document.activeElement);
       return cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0;
@@ -40,18 +35,28 @@ test.describe('keyboard-only', () => {
     expect(ring, 'focused control must show a visible outline').toBeTruthy();
   });
 
-  test('Escape closes cart drawer and category dropdown', async ({ page }) => {
+  test('header nav is exactly Home · Shop · About · Contact', async ({ page }) => {
+    await page.goto('/en');
+    await expect(page.locator('.hdr-nav .hdr-link')).toHaveText(['Home', 'Shop', 'About', 'Contact']);
+    await page.goto('/ar');
+    await expect(page.locator('.hdr-nav .hdr-link')).toHaveCount(4);
+  });
+
+  test('Escape closes cart drawer and the phone menu', async ({ page }) => {
     await page.goto('/en/product/study-set');
     await page.locator('.buy-row .btn-primary').click();
     await expect(page.locator('.drawer')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.locator('.drawer')).not.toBeInViewport();
 
-    await page.locator('.mk-shop-caret').click();
-    await expect(page.locator('.mk-shop-dd')).toBeVisible();
+    await page.setViewportSize({ width: 390, height: 800 });
+    await page.goto('/en');
+    await page.locator('.menu-toggle').click();
+    const menu = page.locator('.mk-drawer');
+    await expect(menu).toBeVisible();
+    await expect(menu.locator('a[href="/en/about"]')).toBeVisible();
     await page.keyboard.press('Escape');
-    await page.mouse.move(5, 400);
-    await expect(page.locator('.mk-shop-dd')).toBeHidden();
+    await expect(menu).toBeHidden();
   });
 
   test('Escape closes the mobile filter sheet', async ({ page }) => {

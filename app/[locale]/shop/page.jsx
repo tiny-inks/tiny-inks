@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import ShopClient from '@/components/ShopClient';
 import SkeletonGrid from '@/components/SkeletonGrid';
-import CollectionChips from '@/components/CollectionChips';
+import CollectionGrid from '@/components/CollectionGrid';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { getDict } from '@/lib/dictionaries';
 import { getProducts, getCollections } from '@/lib/products';
@@ -30,13 +30,19 @@ export default async function ShopPage({ params }) {
       <div className="wrap">
         <Breadcrumbs dict={dict} locale={locale} items={[{ label: dict.nav.shop }]} />
         <h1 className="shop-h1">{dict.shop.title}</h1>
-        <CollectionChips collections={withCounts} locale={locale} dict={dict} />
+        <p className="shop-lede">{dict.shop.categoriesLede}</p>
+
+        {/* the customer picks a category right here, above the products */}
+        <CollectionGrid collections={withCounts} locale={locale} dict={dict} />
+
+        <h2 className="shop-h2" id="all-products">{dict.nav.allProducts}</h2>
         <Suspense fallback={<SkeletonGrid />}>
           <ShopClient
             products={products}
             dict={dict}
             locale={locale}
             collections={withCounts}
+            showCategoriesLink
           />
         </Suspense>
       </div>
