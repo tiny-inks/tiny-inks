@@ -2,3 +2,15 @@ node_modules
 .next
 .env.local
 .DS_Store
+
+# e2e/quality-loop artifacts
+test-results/
+playwright-report/
+pw-*.log
+pw-debug.log
+lh-report.json
+lh-final*.log
+build.log
+
+# nested test clone (user experiment)
+/tiny-inks/

@@ -5,6 +5,9 @@ import Gallery from '@/components/Gallery';
 import AddToCart from '@/components/AddToCart';
 import BuyBar from '@/components/BuyBar';
 import ProductCard from '@/components/ProductCard';
+import Shelf from '@/components/Shelf';
+import WishlistButton from '@/components/WishlistButton';
+import { RecentlyViewedTracker, RecentlyViewedRow } from '@/components/RecentlyViewed';
 import { getDict } from '@/lib/dictionaries';
 import { getProduct, getProducts, formatPrice } from '@/lib/products';
 
@@ -66,7 +69,10 @@ export default async function ProductPage({ params }) {
                 {product.available ? dict.product.instock : dict.product.soldout}
               </div>
             </div>
-            <AddToCart product={product} dict={dict} />
+            <div className="buy-with-wish">
+              <AddToCart product={product} dict={dict} />
+              <WishlistButton handle={product.handle} dict={dict} />
+            </div>
             <div className="pdp-meta">
               <div><strong>{dict.product.shipping}:</strong> {dict.product.shippingText}</div>
               <div><strong>{dict.product.wrap}:</strong> {dict.product.wrapText}</div>
@@ -93,17 +99,24 @@ export default async function ProductPage({ params }) {
       </section>
 
       {relatedList.length > 0 && (
-        <section className="section" style={{ paddingTop: 0 }}>
+        <section className="section row-section" style={{ paddingTop: 0 }}>
           <div className="wrap">
-            <Reveal><h2>{dict.product.related}</h2></Reveal>
-            <div className="shelf" style={{ marginTop: 26 }}>
-              {relatedList.map((p) => (
-                <ProductCard key={p.id} product={p} locale={locale} dict={dict} />
-              ))}
+            <div className="section-head">
+              <Reveal><h2 style={{ marginBottom: 0 }}>{dict.product.related}</h2></Reveal>
             </div>
+            <Reveal>
+              <Shelf ariaLabel={dict.product.related}>
+                {relatedList.map((p) => (
+                  <ProductCard key={p.id} product={p} locale={locale} dict={dict} />
+                ))}
+              </Shelf>
+            </Reveal>
           </div>
         </section>
       )}
+
+      <RecentlyViewedTracker handle={product.handle} />
+      <RecentlyViewedRow products={all} dict={dict} locale={locale} excludeHandle={product.handle} />
 
       <BuyBar product={product} dict={dict} locale={locale} />
     </>

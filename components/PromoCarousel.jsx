@@ -1,21 +1,17 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import useReducedMotion from './reactbits/useReducedMotion';
 import { IMAGES, imgAlt } from '@/lib/images';
 
 /* Promo banner carousel: scroll-snap track (native swipe + RTL), auto-advance
    6s, pauses on hover, arrows + dots, static under reduced motion. */
 const SLIDE_META = [
-  { bg: 'var(--cream)', photoKey: 'giftPink', href: '/shop' },
-  { bg: 'var(--blush)', photoKey: 'notesNotebook', href: '/shop' },
-  { bg: 'var(--blue)', photoKey: 'giftBlush', href: '/bundles' },
+  { bg: 'var(--cream)', href: '/shop' },
+  { bg: 'var(--blush)', href: '/shop' },
+  { bg: 'var(--blue)', href: '/bundles' },
 ];
-const PHOTO_FOR = {
-  giftPink: () => IMAGES.gallery[4],
-  notesNotebook: () => IMAGES.categories['Notebooks'],
-  giftBlush: () => IMAGES.heroSmall,
-};
 
 export default function PromoCarousel({ dict, locale }) {
   const reduced = useReducedMotion();
@@ -80,7 +76,7 @@ export default function PromoCarousel({ dict, locale }) {
       <div className="carousel-track" ref={trackRef}>
         {slides.map((s, i) => {
           const meta = SLIDE_META[i % SLIDE_META.length];
-          const photo = PHOTO_FOR[meta.photoKey]();
+          const photo = IMAGES.promoSlides[i % IMAGES.promoSlides.length];
           return (
             <div className="carousel-slide" key={i} style={{ background: meta.bg }} aria-hidden={idx !== i}>
               <div className="carousel-copy">
@@ -91,7 +87,17 @@ export default function PromoCarousel({ dict, locale }) {
                 </Link>
               </div>
               <div className="carousel-photo">
-                <img src={photo.url} alt={imgAlt(photo, locale)} loading={i === 0 ? 'eager' : 'lazy'} fetchPriority={i === 0 ? 'high' : undefined} />
+                {/* the first slide's photo is the LCP element — let next/image
+                    right-size and preload it */}
+                <Image
+                  src={photo.url}
+                  alt={imgAlt(photo, locale)}
+                  width={750}
+                  height={563}
+                  priority={i === 0}
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  sizes="(max-width: 700px) 92vw, 38vw"
+                />
               </div>
             </div>
           );
@@ -105,7 +111,7 @@ export default function PromoCarousel({ dict, locale }) {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
       </button>
 
-      <div className="carousel-dots" role="tablist">
+      <div className="carousel-dots" aria-label={dict.carousel.ariaLabel}>
         {slides.map((_, i) => (
           <button
             key={i}

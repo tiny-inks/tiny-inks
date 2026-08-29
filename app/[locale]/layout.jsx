@@ -9,6 +9,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
 import BottomNav from '@/components/BottomNav';
+import ScrollProgress from '@/components/ScrollProgress';
 
 const fraunces = Fraunces({
   subsets: ['latin'],
@@ -77,12 +78,16 @@ export default async function LocaleLayout({ children, params }) {
       dir={dir}
       className={`${fraunces.variable} ${karla.variable} ${messiri.variable} ${plexArabic.variable}`}
     >
+      <head>
+        <link rel="preconnect" href="https://images.unsplash.com" />
+      </head>
       <body>
         <a className="skip-link" href="#content">
           {locale === 'ar' ? 'تخطَّ إلى المحتوى' : 'Skip to content'}
         </a>
         <CartProvider>
           <WishlistProvider>
+            <ScrollProgress />
             <Header dict={dict} locale={locale} collections={collections} />
             <main id="content">{children}</main>
             <Footer dict={dict} locale={locale} collections={collections} />

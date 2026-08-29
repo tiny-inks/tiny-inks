@@ -1,12 +1,18 @@
 import Link from 'next/link';
 import PromoCarousel from '@/components/PromoCarousel';
+import ProductMarquee from '@/components/ProductMarquee';
 import Reveal from '@/components/Reveal';
 import ProductCard from '@/components/ProductCard';
+import PhotoFrame from '@/components/PhotoFrame';
+import Shelf from '@/components/Shelf';
 import UspBar from '@/components/UspBar';
+import { ShopByColor, ShopByPrice, GiftFinder, BulkBand, FaqShort } from '@/components/HomeSections';
+import { RecentlyViewedRow } from '@/components/RecentlyViewed';
 import { NewsletterForm } from '@/components/Forms';
 import { getDict } from '@/lib/dictionaries';
 import { getProducts, getCollections } from '@/lib/products';
-import { PHOTOS, imgAlt } from '@/lib/images';
+import { FAQ } from '@/content/policies';
+import { PHOTOS, IMAGES, imgAlt } from '@/lib/images';
 
 /* tint fallback cycle for live collections that carry no demo color */
 const TILE_TINTS = ['var(--blue)', 'var(--sage)', 'var(--cream)', 'var(--mustard)', 'var(--blush)', 'var(--terracotta)'];
@@ -42,11 +48,13 @@ function ProductRow({ id, eyebrow, title, cta, href, products, locale, dict }) {
             {cta} <span className="arrow" aria-hidden="true">→</span>
           </Link>
         </div>
-        <div className="shelf">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} locale={locale} dict={dict} />
-          ))}
-        </div>
+        <Reveal>
+          <Shelf ariaLabel={title}>
+            {products.map((p) => (
+              <ProductCard key={p.id} product={p} locale={locale} dict={dict} />
+            ))}
+          </Shelf>
+        </Reveal>
       </div>
     </section>
   );
@@ -67,6 +75,9 @@ export default async function Home({ params }) {
     .slice(0, 6);
   const bundles = products.filter((p) => p.tags?.includes('bundle'));
   const reviews = REVIEWS[locale];
+  /* short FAQ: delivery time, delivery cost, returns, gift wrap, bulk */
+  const faqAll = FAQ[locale].items;
+  const faqShort = [faqAll[0], faqAll[1], faqAll[4], faqAll[2], faqAll[7]].filter(Boolean);
 
   return (
     <>
@@ -94,6 +105,9 @@ export default async function Home({ params }) {
         </div>
       </section>
 
+      {/* infinite product-photo loop */}
+      <ProductMarquee products={products} locale={locale} label={dict.marqueeRow.label} />
+
       <ProductRow
         id="best-sellers"
         eyebrow={dict.home.bestEyebrow}
@@ -104,6 +118,24 @@ export default async function Home({ params }) {
         locale={locale}
         dict={dict}
       />
+
+      {/* 1 — shop by color (signature) */}
+      <ShopByColor dict={dict} locale={locale} />
+
+      {/* 2 — shop by price */}
+      <ShopByPrice dict={dict} locale={locale} />
+
+      {/* 3 — gift finder */}
+      <GiftFinder dict={dict} locale={locale} />
+
+      {/* 4 — bulk & school orders */}
+      <BulkBand dict={dict} />
+
+      {/* 5 — recently viewed (hidden while empty) */}
+      <RecentlyViewedRow products={products} dict={dict} locale={locale} />
+
+      {/* 6 — short FAQ */}
+      <FaqShort dict={dict} locale={locale} items={faqShort} />
 
       {/* category grid */}
       <section className="section row-section">
@@ -187,6 +219,34 @@ export default async function Home({ params }) {
                 <NewsletterForm dict={dict} />
               </div>
             </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* instagram polaroids — last */}
+      <section className="section row-section" style={{ paddingBottom: 10 }}>
+        <div className="wrap">
+          <div className="section-head">
+            <Reveal><h2 style={{ marginBottom: 0 }}>{dict.home.igTitle}</h2></Reveal>
+            <a
+              href={process.env.NEXT_PUBLIC_INSTAGRAM_URL || '#'}
+              target="_blank"
+              rel="noreferrer"
+              className="btn btn-ghost btn-sm"
+            >
+              {dict.home.igHandle}
+            </a>
+          </div>
+          <Reveal stagger className="ig-strip">
+            {IMAGES.polaroids.map((photo, i) => (
+              <PhotoFrame
+                key={i}
+                photo={photo}
+                locale={locale}
+                variant="polaroid"
+                caption={dict.home.polaroids[i]}
+              />
+            ))}
           </Reveal>
         </div>
       </section>

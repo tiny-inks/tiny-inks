@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import ShopClient from '@/components/ShopClient';
+import SkeletonGrid from '@/components/SkeletonGrid';
 import { getDict } from '@/lib/dictionaries';
 import { getProducts, getCollections, getCollectionWithProducts } from '@/lib/products';
 
@@ -34,7 +35,7 @@ export default async function CollectionPage({ params }) {
     <section className="section" style={{ paddingTop: 'clamp(18px, 3vw, 34px)' }}>
       <div className="wrap">
         <h1 className="shop-h1">{data.collection.title}</h1>
-        <Suspense>
+        <Suspense fallback={<SkeletonGrid />}>
           <ShopClient
             products={data.products}
             dict={dict}

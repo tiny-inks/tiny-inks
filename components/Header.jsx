@@ -140,7 +140,7 @@ export default function Header({ dict, locale, collections = [] }) {
                 <path d="M6 7h12l1.2 13H4.8L6 7z" />
                 <path d="M9 10V6a3 3 0 0 1 6 0v4" />
               </svg>
-              {cart.count > 0 && <span className="cart-count">{cart.count}</span>}
+              {cart.count > 0 && <span className="cart-count" key={cart.count}>{cart.count}</span>}
             </button>
             <Link href={`/${otherLocale}${rest}`} className="locale-btn" aria-label="Switch language">
               {otherLocale === 'ar' ? 'العربية' : 'EN'}

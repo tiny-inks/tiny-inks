@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Reveal from '@/components/Reveal';
+import Shelf from '@/components/Shelf';
 import ProductCard from '@/components/ProductCard';
 import { getDict } from '@/lib/dictionaries';
 import { getProducts } from '@/lib/products';
@@ -68,11 +69,13 @@ export default async function BundlesPage({ params }) {
                 {dict.home.viewAll} <span className="arrow" aria-hidden="true">→</span>
               </Link>
             </div>
-            <div className="shelf">
-              {newest.map((p) => (
-                <ProductCard key={p.id} product={p} locale={locale} dict={dict} />
-              ))}
-            </div>
+            <Reveal>
+              <Shelf ariaLabel={t.newTitle}>
+                {newest.map((p) => (
+                  <ProductCard key={p.id} product={p} locale={locale} dict={dict} />
+                ))}
+              </Shelf>
+            </Reveal>
           </div>
         </section>
       )}
