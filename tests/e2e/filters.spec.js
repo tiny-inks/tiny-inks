@@ -23,6 +23,7 @@ test.describe('shop filters', () => {
   test('color, price, stock filters combine, chips clear, URL restores', async ({ page }, testInfo) => {
     test.setTimeout(120_000);
     await page.goto('/en/shop');
+    await expect(page.locator('.load-more')).toBeVisible(); // first page fully rendered (catalogue > one page)
     const count0 = await page.locator('.grid .mcard').count();
     expect(count0).toBeGreaterThan(5);
 

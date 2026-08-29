@@ -46,14 +46,15 @@ test.describe('header', () => {
       }
     });
 
-    test(`phone menu holds exactly Home · Shop · About · Contact + language [${locale}]`, async ({ page }) => {
+    test(`phone menu holds exactly Home · Shop · Print · About · Contact + language [${locale}]`, async ({ page }) => {
       await page.setViewportSize({ width: 360, height: 740 });
       await page.goto(`/${locale}/shop`);
       await page.locator('.menu-toggle').click();
       const menu = page.locator('.mk-drawer');
       await expect(menu).toBeVisible();
-      await expect(menu.locator('> a')).toHaveCount(4);
+      await expect(menu.locator('> a')).toHaveCount(5);
       await expect(menu.locator('.mk-drawer-foot .locale-btn')).toBeVisible();
+      await page.waitForTimeout(400); // let the slide-in transition finish before measuring
       // the menu is anchored under the header and stays inside the viewport
       const mb = await menu.boundingBox();
       const hb = await page.locator('.hdr-row').boundingBox();

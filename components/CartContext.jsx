@@ -121,6 +121,38 @@ export function CartProvider({ children }) {
     }
   }, [live, cartId, applyCart]);
 
+  /* Several lines at once, each with line-item attributes (the print service).
+     Demo: stored locally with the attributes; live: cartLinesAdd with attributes. */
+  const addLines = useCallback(async (lines, { open = true } = {}) => {
+    const clean = (attrs = []) => attrs.filter((a) => a && a.key && a.value != null).map((a) => ({ key: String(a.key).slice(0, 100), value: String(a.value).slice(0, 1000) }));
+    if (!live) {
+      setItems((prev) => [
+        ...prev,
+        ...lines.map((l, i) => ({
+          variantId: l.variantId, lineId: `${l.variantId}-${Date.now()}-${i}`, title: l.title, handle: l.handle || 'print',
+          price: Number(l.price) || 0, image: l.images?.[0]?.url || null, qty: l.qty, attributes: clean(l.attributes),
+        })),
+      ]);
+      if (open) setOpen(true);
+      return true;
+    }
+    setBusy(true);
+    try {
+      const shopLines = lines.map((l) => ({ merchandiseId: l.variantId, quantity: l.qty, attributes: clean(l.attributes) }));
+      if (!cartId) {
+        const d = await shopifyFetch(CART_CREATE, { lines: shopLines });
+        applyCart(d.cartCreate.cart);
+      } else {
+        const d = await shopifyFetch(CART_LINES_ADD, { cartId, lines: shopLines });
+        applyCart(d.cartLinesAdd.cart);
+      }
+      if (open) setOpen(true);
+      return true;
+    } finally {
+      setBusy(false);
+    }
+  }, [live, cartId, applyCart]);
+
   const setQty = useCallback(async (item, qty) => {
     if (qty < 1) return remove(item);
     if (!live) {
@@ -174,7 +206,7 @@ export function CartProvider({ children }) {
   const count = useMemo(() => items.reduce((s, x) => s + x.qty, 0), [items]);
   const subtotal = useMemo(() => items.reduce((s, x) => s + x.qty * x.price, 0), [items]);
 
-  const value = { items, count, subtotal, open, setOpen, add, setQty, remove, checkout, live, busy, delivery, setDelivery, deliveryValid, deliveryError };
+  const value = { items, count, subtotal, open, setOpen, add, addLines, setQty, remove, checkout, live, busy, delivery, setDelivery, deliveryValid, deliveryError };
   return <CartCtx.Provider value={value}>{children}</CartCtx.Provider>;
 }
 

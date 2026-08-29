@@ -5,7 +5,7 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 10_000 },
   fullyParallel: true,
-  workers: 4,
+  workers: 2, // the shop laptop is memory-starved; 4 workers OOM the runner
   reporter: [['line']],
   use: {
     baseURL: 'http://localhost:3000',

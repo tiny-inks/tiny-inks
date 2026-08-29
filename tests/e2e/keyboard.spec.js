@@ -35,11 +35,11 @@ test.describe('keyboard-only', () => {
     expect(ring, 'focused control must show a visible outline').toBeTruthy();
   });
 
-  test('header nav is exactly Home · Shop · About · Contact', async ({ page }) => {
+  test('header nav is exactly Home · Shop · Print · About · Contact', async ({ page }) => {
     await page.goto('/en');
-    await expect(page.locator('.hdr-nav .hdr-link')).toHaveText(['Home', 'Shop', 'About', 'Contact']);
+    await expect(page.locator('.hdr-nav .hdr-link')).toHaveText(['Home', 'Shop', 'Print', 'About', 'Contact']);
     await page.goto('/ar');
-    await expect(page.locator('.hdr-nav .hdr-link')).toHaveCount(4);
+    await expect(page.locator('.hdr-nav .hdr-link')).toHaveCount(5);
   });
 
   test('Escape closes cart drawer and the phone menu', async ({ page }) => {

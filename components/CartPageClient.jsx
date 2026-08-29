@@ -41,6 +41,13 @@ export default function CartPageClient({ dict, locale, collections = [] }) {
               <Link href={`/${locale}/product/${item.handle}`} className="cart-row-title">
                 {item.title}
               </Link>
+              {item.attributes?.length > 0 && (
+              <ul className="line-attrs">
+                {item.attributes.filter((a) => ['Files', 'Pages', 'Paper size', 'Colour', 'Sides', 'Copies', 'Finishing', 'Fulfilment'].includes(a.key)).map((a) => (
+              <li key={a.key}><span>{a.key}:</span> {a.value}</li>
+                ))}
+              </ul>
+              )}
               <div className="cart-row-price">
                 {formatPrice(item.price, 'AED', locale)} <span>{tp.each}</span>
               </div>

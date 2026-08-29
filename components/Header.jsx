@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useCart } from './CartContext';
 import { useWishlist } from './WishlistContext';
 
-/* ONE compact sticky row: ☰ · logo · (desktop: Home Shop About Contact + search)
+/* ONE compact sticky row: ☰ · logo · (desktop: Home Shop Print About Contact + search)
    · wishlist · cart · language. On phones the search lives behind the search
    icon and drops down as a full-width row; the ☰ menu holds the same 4 links
    plus language. Categories live on the shop page, not in the header. */
@@ -60,6 +60,7 @@ export default function Header({ dict, locale }) {
   const NAV = [
     { href: `/${locale}`, label: dict.nav.home, active: is(`/${locale}`) },
     { href: `/${locale}/shop`, label: dict.nav.shop, active: inShop },
+    { href: `/${locale}/print`, label: dict.nav.print, active: pathname.startsWith(`/${locale}/print`) },
     { href: `/${locale}/about`, label: dict.nav.about, active: is(`/${locale}/about`) },
     { href: `/${locale}/contact`, label: dict.nav.contact, active: is(`/${locale}/contact`) },
   ];

@@ -176,3 +176,7 @@ Made with ✦ for Tiny Inks.
 - **Social icons** show only Instagram, TikTok and WhatsApp, from `NEXT_PUBLIC_INSTAGRAM_URL`, `NEXT_PUBLIC_TIKTOK_URL`, `NEXT_PUBLIC_WHATSAPP_NUMBER`. Shop address and hours come from `NEXT_PUBLIC_SHOP_ADDRESS`, `NEXT_PUBLIC_SHOP_MAPS_URL`, `NEXT_PUBLIC_SHOP_HOURS`.
 - **Delivery details on /cart** (name, phone, email, address, "Locate me") are saved on the device and, in live mode, attached to the Shopify cart as attributes + note + buyer identity right before the customer is sent to Shopify checkout. They appear on the order in Shopify admin under *Additional details*. Checkout itself is untouched.
 - **Home video loop**: swap `public/video/tiny-inks-loop.webm` and `public/video/poster.jpg` (see `public/video/README.md`).
+
+## Print service (/print) and staff app (/staff)
+
+Customers upload PDF/DOCX/JPG/PNG on `/print`, get a live itemised quote (rates in `config/print-pricing.js`), and pay through the normal Shopify cart via hidden per-page products. Staff run the queue at `/staff` (installable PWA, shared password). Everything is documented in **print-report.md** — env vars, the Shopify products to create, how to change prices, how staff log in, and what could not be tested on this machine.

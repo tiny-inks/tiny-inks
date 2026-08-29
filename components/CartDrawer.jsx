@@ -52,6 +52,13 @@ export default function CartDrawer({ dict, locale, collections = [] }) {
                 {item.image ? <img src={item.image} alt="" /> : <div className="line-ph"><Placeholder handle={item.handle} title={item.title} size="thumb" /></div>}
                 <div>
                   <h4>{item.title}</h4>
+                  {item.attributes?.length > 0 && (
+                    <ul className="line-attrs">
+                      {item.attributes.filter((a) => ['Files', 'Pages', 'Paper size', 'Colour', 'Sides', 'Copies', 'Finishing', 'Fulfilment'].includes(a.key)).map((a) => (
+                        <li key={a.key}><span>{a.key}:</span> {a.value}</li>
+                      ))}
+                    </ul>
+                  )}
                   <div className="qty">
                     <button onClick={() => cart.setQty(item, item.qty - 1)} aria-label="-">−</button>
                     <span>{item.qty}</span>
