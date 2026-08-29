@@ -1,5 +1,4 @@
 import '../globals.css';
-import { Fraunces, Karla, El_Messiri, IBM_Plex_Sans_Arabic } from 'next/font/google';
 import { getDict, LOCALES } from '@/lib/dictionaries';
 import { getCollections } from '@/lib/products';
 import { SITE_URL } from '@/lib/site';
@@ -11,31 +10,6 @@ import CartDrawer from '@/components/CartDrawer';
 import BottomNav from '@/components/BottomNav';
 import ScrollProgress from '@/components/ScrollProgress';
 
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  style: ['normal', 'italic'],
-  variable: '--f-fraunces',
-  display: 'swap',
-});
-const karla = Karla({
-  subsets: ['latin'],
-  weight: ['400', '700', '800'],
-  variable: '--f-karla',
-  display: 'swap',
-});
-const messiri = El_Messiri({
-  subsets: ['arabic'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--f-messiri',
-  display: 'swap',
-});
-const plexArabic = IBM_Plex_Sans_Arabic({
-  subsets: ['arabic'],
-  weight: ['400', '500', '700'],
-  variable: '--f-plexar',
-  display: 'swap',
-});
 
 export function generateStaticParams() {
   return LOCALES.map((locale) => ({ locale }));
@@ -76,10 +50,16 @@ export default async function LocaleLayout({ children, params }) {
     <html
       lang={locale}
       dir={dir}
-      className={`${fraunces.variable} ${karla.variable} ${messiri.variable} ${plexArabic.variable}`}
     >
       <head>
         <link rel="preconnect" href="https://images.unsplash.com" />
+        {/* self-hosted fonts (public/fonts) — preload the ones this locale paints first */}
+        {(locale === 'ar'
+          ? ['/fonts/el-messiri-arabic.woff2', '/fonts/plex-arabic-arabic-400.woff2']
+          : ['/fonts/fraunces-latin.woff2', '/fonts/karla-latin.woff2']
+        ).map((href) => (
+          <link key={href} rel="preload" as="font" type="font/woff2" href={href} crossOrigin="anonymous" />
+        ))}
       </head>
       <body>
         <a className="skip-link" href="#content">
