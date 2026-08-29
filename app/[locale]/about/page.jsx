@@ -1,4 +1,5 @@
 import Reveal from '@/components/Reveal';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import { getDict } from '@/lib/dictionaries';
 
 export async function generateMetadata({ params }) {
@@ -13,7 +14,10 @@ export default function AboutPage({ params }) {
 
   return (
     <>
-      <section className="section" style={{ paddingBottom: 'clamp(30px, 5vw, 60px)' }}>
+      <section className="section" style={{ paddingTop: 'clamp(18px, 3vw, 34px)', paddingBottom: 'clamp(30px, 5vw, 60px)' }}>
+        <div className="wrap" style={{ marginBottom: 18 }}>
+          <Breadcrumbs dict={dict} locale={locale} items={[{ label: dict.nav.about }]} />
+        </div>
         <div className="wrap split wide-start">
           <Reveal>
             <div className="eyebrow">{t.eyebrow}</div>

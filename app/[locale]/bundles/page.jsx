@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Reveal from '@/components/Reveal';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import Shelf from '@/components/Shelf';
 import ProductCard from '@/components/ProductCard';
 import { getDict } from '@/lib/dictionaries';
@@ -33,6 +34,7 @@ export default async function BundlesPage({ params }) {
     <>
       <section className="section" style={{ paddingTop: 'clamp(40px, 6vw, 70px)' }}>
         <div className="wrap">
+          <Breadcrumbs dict={dict} locale={locale} items={[{ label: dict.nav.drops }]} />
           <Reveal>
             <div className="eyebrow">{t.eyebrow}</div>
             <h1 style={{ fontSize: 'clamp(2.2rem, 5vw, 3.6rem)' }}>{t.title}</h1>

@@ -31,11 +31,12 @@ for (const locale of LOCALES) {
   test(`header All-Categories control opens and lists collections [${locale}]`, async ({ page }, testInfo) => {
     await page.goto(`/${locale}`);
     if (testInfo.project.name === 'desktop') {
-      await page.locator('.mk-cats-btn').click();
-      const dd = page.locator('.mk-cats-dd');
+      await page.locator('.mk-shop-caret').click();
+      const dd = page.locator('.mk-shop-dd');
       await expect(dd).toBeVisible();
       expect(await dd.locator('a').count()).toBeGreaterThanOrEqual(7);
       await page.keyboard.press('Escape');
+      await page.mouse.move(5, 400);
       await expect(dd).toBeHidden();
     } else {
       await page.locator('.menu-toggle').click();

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Reveal from '@/components/Reveal';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import { getDict, LOCALES } from '@/lib/dictionaries';
 import { POLICIES, POLICY_SLUGS } from '@/content/policies';
 
@@ -28,8 +29,8 @@ export default function PolicyPage({ params }) {
   return (
     <section className="section" style={{ paddingTop: 'clamp(40px, 6vw, 70px)' }}>
       <div className="wrap policy-wrap">
+        <Breadcrumbs dict={dict} locale={locale} items={[{ href: `/${locale}/faq`, label: dict.policies.title }, { label: t.title }]} />
         <Reveal>
-          <div className="eyebrow">{dict.policies.title}</div>
           <h1 style={{ fontSize: 'clamp(2rem, 4.5vw, 3.2rem)' }}>{t.title}</h1>
           <p className="policy-note">✦ {dict.policies.reviewNote}</p>
         </Reveal>

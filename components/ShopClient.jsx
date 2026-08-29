@@ -148,7 +148,7 @@ export default function ShopClient({
         <h4>{tu.categories}</h4>
         <div className="cat-list">
           {/* collection links — driven by Shopify (demo: mock categories) */}
-          <Link href={`/${locale}/shop`} className={`cat-link ${!currentCollection ? 'on' : ''}`}>
+          <Link href={`/${locale}/shop`} className={`cat-link ${!currentCollection ? 'on' : ''}`} aria-current={!currentCollection ? 'page' : undefined}>
             {t.all}
           </Link>
           {collections.map((c) => (
@@ -156,6 +156,7 @@ export default function ShopClient({
               key={c.handle}
               href={`/${locale}/shop/${c.handle}`}
               className={`cat-link ${currentCollection === c.handle ? 'on' : ''}`}
+              aria-current={currentCollection === c.handle ? 'page' : undefined}
             >
               {c.title} {typeof c.count === 'number' ? <span>{c.count}</span> : null}
             </Link>
@@ -233,20 +234,6 @@ export default function ShopClient({
 
   return (
     <div>
-      {/* breadcrumb */}
-      <nav className="breadcrumb" aria-label="Breadcrumb">
-        <Link href={`/${locale}`}>{dict.nav.home}</Link>
-        <span aria-hidden="true">/</span>
-        {!currentCollection ? (
-          <span aria-current="page">{tu.breadcrumbShop}</span>
-        ) : (
-          <>
-            <Link href={`/${locale}/shop`}>{tu.breadcrumbShop}</Link>
-            <span aria-hidden="true">/</span>
-            <span aria-current="page">{collectionTitle}</span>
-          </>
-        )}
-      </nav>
 
       {/* count + sort + per-page on one line */}
       <div className="shop-toolbar">
@@ -296,12 +283,13 @@ export default function ShopClient({
 
         <div>
           {filtered.length === 0 ? (
-            <div>
-              <EmptyState dict={dict} locale={locale} collections={collections} title={t.emptyTitle} />
-              <div style={{ textAlign: 'center', marginTop: 14 }}>
-                <button className="btn btn-sm" onClick={clearAll}>{tu.clearAll}</button>
-              </div>
-            </div>
+            <EmptyState
+              dict={dict}
+              locale={locale}
+              collections={collections}
+              title={t.emptyTitle}
+              action={<button className="btn btn-sm" onClick={clearAll}>{tu.clearAll}</button>}
+            />
           ) : (
             <>
               <div className="grid">

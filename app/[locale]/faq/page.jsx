@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Reveal from '@/components/Reveal';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import { getDict } from '@/lib/dictionaries';
 import { FAQ, POLICY_SLUGS } from '@/content/policies';
 
@@ -16,8 +17,8 @@ export default function FaqPage({ params }) {
   return (
     <section className="section" style={{ paddingTop: 'clamp(40px, 6vw, 70px)' }}>
       <div className="wrap policy-wrap">
+        <Breadcrumbs dict={dict} locale={locale} items={[{ label: dict.policies.faq }]} />
         <Reveal>
-          <div className="eyebrow">Tiny Inks</div>
           <h1 style={{ fontSize: 'clamp(2rem, 4.5vw, 3.2rem)' }}>{dict.faqPage.title}</h1>
           <p className="lede" style={{ marginBottom: 34 }}>{dict.faqPage.lede}</p>
         </Reveal>

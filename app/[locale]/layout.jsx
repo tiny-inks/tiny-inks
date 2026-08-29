@@ -71,7 +71,7 @@ export default async function LocaleLayout({ children, params }) {
             <Header dict={dict} locale={locale} collections={collections} />
             <main id="content">{children}</main>
             <Footer dict={dict} locale={locale} collections={collections} />
-            <CartDrawer dict={dict} locale={locale} />
+            <CartDrawer dict={dict} locale={locale} collections={collections} />
             <BottomNav dict={dict} locale={locale} />
           </WishlistProvider>
         </CartProvider>

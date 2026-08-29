@@ -1,6 +1,8 @@
 import { Suspense } from 'react';
 import ShopClient from '@/components/ShopClient';
 import SkeletonGrid from '@/components/SkeletonGrid';
+import CollectionChips from '@/components/CollectionChips';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import { getDict } from '@/lib/dictionaries';
 import { getProducts, getCollections } from '@/lib/products';
 
@@ -26,7 +28,9 @@ export default async function ShopPage({ params }) {
   return (
     <section className="section" style={{ paddingTop: 'clamp(18px, 3vw, 34px)' }}>
       <div className="wrap">
+        <Breadcrumbs dict={dict} locale={locale} items={[{ label: dict.nav.shop }]} />
         <h1 className="shop-h1">{dict.shop.title}</h1>
+        <CollectionChips collections={withCounts} locale={locale} dict={dict} />
         <Suspense fallback={<SkeletonGrid />}>
           <ShopClient
             products={products}

@@ -7,9 +7,10 @@ import BuyBar from '@/components/BuyBar';
 import ProductCard from '@/components/ProductCard';
 import Shelf from '@/components/Shelf';
 import WishlistButton from '@/components/WishlistButton';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import { RecentlyViewedTracker, RecentlyViewedRow } from '@/components/RecentlyViewed';
 import { getDict } from '@/lib/dictionaries';
-import { getProduct, getProducts, formatPrice } from '@/lib/products';
+import { getProduct, getProducts, getCollections, formatPrice } from '@/lib/products';
 
 export async function generateMetadata({ params }) {
   const product = await getProduct(params.handle, params.locale);
@@ -27,7 +28,8 @@ export default async function ProductPage({ params }) {
   const product = await getProduct(params.handle, locale);
   if (!product) notFound();
 
-  const all = await getProducts(locale);
+  const [all, collections] = await Promise.all([getProducts(locale), getCollections(locale)]);
+  const col = collections.find((c) => product.collections?.includes(c.handle));
   const related = all
     .filter((p) => p.handle !== product.handle && p.productType === product.productType)
     .slice(0, 4);
@@ -56,7 +58,18 @@ export default async function ProductPage({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <section className="section pdp-section" style={{ paddingTop: 'clamp(30px, 5vw, 60px)' }}>
+      <section className="section pdp-section" style={{ paddingTop: 'clamp(18px, 3vw, 34px)' }}>
+        <div className="wrap" style={{ marginBottom: 14 }}>
+          <Breadcrumbs
+            dict={dict}
+            locale={locale}
+            items={[
+              { href: `/${locale}/shop`, label: dict.nav.shop },
+              ...(col ? [{ href: `/${locale}/shop/${col.handle}`, label: col.title }] : []),
+              { label: product.title },
+            ]}
+          />
+        </div>
         <div className="wrap pdp">
           <Gallery images={product.images} title={product.title} handle={product.handle} noImageLabel={dict.cartUi.noImage} />
           <div className="pdp-buy">

@@ -1,4 +1,5 @@
 import Reveal from '@/components/Reveal';
+import Breadcrumbs from '@/components/Breadcrumbs';
 import { ContactForm } from '@/components/Forms';
 import { getDict } from '@/lib/dictionaries';
 
@@ -16,7 +17,10 @@ export default function ContactPage({ params }) {
   const ig = process.env.NEXT_PUBLIC_INSTAGRAM_URL || '#';
 
   return (
-    <section className="section">
+    <section className="section" style={{ paddingTop: 'clamp(18px, 3vw, 34px)' }}>
+      <div className="wrap" style={{ marginBottom: 18 }}>
+        <Breadcrumbs dict={dict} locale={locale} items={[{ label: dict.nav.contact }]} />
+      </div>
       <div className="wrap split">
         <Reveal>
           <div className="eyebrow">{t.eyebrow}</div>

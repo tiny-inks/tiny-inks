@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useCart } from './CartContext';
 import Placeholder from './Placeholder';
 import FreeDeliveryBar from './FreeDeliveryBar';
@@ -10,6 +10,16 @@ import { formatPrice } from '@/lib/products';
 export default function CartDrawer({ dict, locale, collections = [] }) {
   const cart = useCart();
   const t = dict.cartUi;
+  /* Only mount the drawer contents while it is open (plus the slide-out
+     animation) so a closed drawer never leaves hidden links, headings or an
+     empty state in the document for screen readers and tests to trip on. */
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (cart.open) { setMounted(true); return; }
+    const id = setTimeout(() => setMounted(false), 360);
+    return () => clearTimeout(id);
+  }, [cart.open]);
 
   useEffect(() => {
     if (!cart.open) return;
@@ -32,7 +42,7 @@ export default function CartDrawer({ dict, locale, collections = [] }) {
         </div>
 
         <div className="drawer-body">
-          {cart.items.length === 0 ? (
+          {!mounted ? null : cart.items.length === 0 ? (
             <div onClick={(e) => { if (e.target.closest('a')) cart.setOpen(false); }}>
               <EmptyState dict={dict} locale={locale} collections={collections} title={t.empty} cta={t.emptyCta} ctaHref={`/${locale}/shop`} />
             </div>

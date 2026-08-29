@@ -272,7 +272,8 @@ h1 em, h2 em { color: var(--terracotta); }
 .mk-drawer {
   display: none; position: fixed; inset: 0; z-index: 55;
   background: var(--paper-soft);
-  flex-direction: column; padding: 132px 24px 40px; gap: 0;
+  /* clears the 3-row mobile header (announce + row 1 + search) at the top and the bottom tab bar at the end */
+  flex-direction: column; padding: 176px 24px 110px; gap: 0;
   overflow-y: auto;
   transform: translateY(-110%); transition: transform 0.45s var(--ease);
 }
@@ -281,7 +282,6 @@ h1 em, h2 em { color: var(--terracotta); }
   font-family: var(--font-display); font-size: 1.3rem; font-weight: 500;
   padding-block: 12px; border-bottom: 1px solid var(--line); display: block;
 }
-.mk-drawer-top { display: flex; justify-content: flex-end; padding-bottom: 10px; }
 
 @media (max-width: 900px) {
   .mk-search-desktop, .mk-catbar { display: none; }
@@ -1272,7 +1272,7 @@ h1 em, h2 em { color: var(--terracotta); }
 .mk-shop-dd {
   display: none; grid-template-columns: 1fr 1fr; min-width: 360px;
 }
-.mk-shop:hover .mk-shop-dd, .mk-shop:focus-within .mk-shop-dd, .mk-shop-dd.open { display: grid; }
+.mk-shop:hover .mk-shop-dd, .mk-shop-dd.open { display: grid; }
 .mk-shop-dd a.active, .dropdown a.active { background: var(--cream); color: var(--terracotta-dark); }
 .icon-btn.active { border-color: var(--terracotta-dark); color: var(--terracotta-dark); }
 

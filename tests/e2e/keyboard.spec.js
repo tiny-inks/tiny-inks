@@ -25,14 +25,14 @@ test.describe('keyboard-only', () => {
       seen.add(`${info.tag}:${info.cls}`);
     }
     const all = [...seen].join(',');
-    for (const cls of ['brand', 'mk-cats-btn', 'icon-btn', 'locale-btn']) {
+    for (const cls of ['brand', 'icon-btn', 'locale-btn', 'mk-shop-caret']) {
       expect(all, `expected tab stop ${cls}`).toContain(cls);
     }
     // search input reachable
     expect(all).toContain('INPUT');
 
     // focus ring visible on a focused button
-    await page.locator('.mk-cats-btn').focus();
+    await page.locator('.mk-shop-caret').focus();
     const ring = await page.evaluate(() => {
       const cs = getComputedStyle(document.activeElement);
       return cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0;
@@ -47,10 +47,11 @@ test.describe('keyboard-only', () => {
     await page.keyboard.press('Escape');
     await expect(page.locator('.drawer')).not.toBeInViewport();
 
-    await page.locator('.mk-cats-btn').click();
-    await expect(page.locator('.mk-cats-dd')).toBeVisible();
+    await page.locator('.mk-shop-caret').click();
+    await expect(page.locator('.mk-shop-dd')).toBeVisible();
     await page.keyboard.press('Escape');
-    await expect(page.locator('.mk-cats-dd')).toBeHidden();
+    await page.mouse.move(5, 400);
+    await expect(page.locator('.mk-shop-dd')).toBeHidden();
   });
 
   test('Escape closes the mobile filter sheet', async ({ page }) => {
