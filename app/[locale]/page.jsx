@@ -10,7 +10,8 @@ import { ShopByColor, ShopByPrice, GiftFinder, BulkBand, FaqShort } from '@/comp
 import { RecentlyViewedRow } from '@/components/RecentlyViewed';
 import { NewsletterForm } from '@/components/Forms';
 import { getDict } from '@/lib/dictionaries';
-import { getProducts, getCollections } from '@/lib/products';
+import { getProducts, getCollections, getCollectionWithProducts } from '@/lib/products';
+import { tintFor } from '@/components/Placeholder';
 import { FAQ } from '@/content/policies';
 import { PHOTOS, IMAGES, imgAlt } from '@/lib/images';
 
@@ -36,6 +37,7 @@ const PROMO_META = [
 ];
 
 function ProductRow({ id, eyebrow, title, cta, href, products, locale, dict }) {
+  if (!products || products.length === 0) return null;
   return (
     <section className="section row-section" id={id}>
       <div className="wrap">
@@ -67,13 +69,18 @@ export default async function Home({ params }) {
     getProducts(locale),
     getCollections(locale),
   ]);
-  const bestsellers = products.filter((p) => p.tags?.includes('bestseller')).slice(0, 8);
-  const shelf = bestsellers.length >= 3 ? bestsellers : products.slice(0, 8);
-  const newest = [...products]
+  const byNewest = [...products]
     .filter((p) => p.available)
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 6);
-  const bundles = products.filter((p) => p.tags?.includes('bundle'));
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  /* rows never render empty: fall back to sensible picks when tags are absent */
+  const bestsellers = products.filter((p) => p.tags?.includes('bestseller')).slice(0, 8);
+  const shelf = bestsellers.length >= 3 ? bestsellers : byNewest.slice(8, 16).length >= 3 ? byNewest.slice(8, 16) : byNewest.slice(0, 8);
+  const newest = byNewest.slice(0, 8);
+  let bundles = products.filter((p) => p.tags?.includes('bundle'));
+  if (bundles.length === 0 && collections.some((c) => c.handle === 'gift-sets')) {
+    const gs = await getCollectionWithProducts('gift-sets', locale);
+    bundles = gs?.products || [];
+  }
   const reviews = REVIEWS[locale];
   /* short FAQ: delivery time, delivery cost, returns, gift wrap, bulk */
   const faqAll = FAQ[locale].items;
@@ -152,11 +159,15 @@ export default async function Home({ params }) {
                   <Link href={`/${locale}/shop/${c.handle}`} className="tile">
                     <div className="tile-media">
                       {c.image?.url ? (
-                        <img src={c.image.url} alt={c.image.alt || c.title} loading="lazy" />
+                        <>
+                          <img src={c.image.url} alt={c.image.alt || c.title} loading="lazy" />
+                          <div className="tile-tint" style={{ background: c.color || TILE_TINTS[i % TILE_TINTS.length] }} />
+                        </>
                       ) : (
-                        <span className="card-noimg" aria-hidden="true">✦</span>
+                        <div className="tile-solid" style={{ background: c.color || tintFor(c.handle) }} aria-hidden="true">
+                          <span>✦</span>
+                        </div>
                       )}
-                      <div className="tile-tint" style={{ background: c.color || TILE_TINTS[i % TILE_TINTS.length] }} />
                       <div className="tile-overlay">
                         <h3>{c.title}</h3>
                         <p>{count} {dict.shop.results}</p>
@@ -180,15 +191,17 @@ export default async function Home({ params }) {
         dict={dict}
       />
 
-      <ProductRow
-        eyebrow={dict.home.bundlesEyebrow}
-        title={dict.home.bundlesTitle}
-        cta={dict.home.bundlesCta}
-        href={`/${locale}/bundles`}
-        products={bundles}
-        locale={locale}
-        dict={dict}
-      />
+      {bundles.length > 0 && (
+        <ProductRow
+          eyebrow={dict.home.bundlesEyebrow}
+          title={dict.home.bundlesTitle}
+          cta={dict.home.bundlesCta}
+          href={`/${locale}/bundles`}
+          products={bundles}
+          locale={locale}
+          dict={dict}
+        />
+      )}
 
       {/* reviews */}
       <section className="section row-section">

@@ -58,7 +58,7 @@ export default async function ProductPage({ params }) {
       />
       <section className="section pdp-section" style={{ paddingTop: 'clamp(30px, 5vw, 60px)' }}>
         <div className="wrap pdp">
-          <Gallery images={product.images} title={product.title} />
+          <Gallery images={product.images} title={product.title} handle={product.handle} noImageLabel={dict.cartUi.noImage} />
           <div className="pdp-buy">
             <div className="card-type">{product.productType}</div>
             <h1 style={{ fontSize: 'clamp(1.9rem, 4vw, 3rem)' }}>{product.title}</h1>

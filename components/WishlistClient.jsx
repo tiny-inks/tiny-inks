@@ -1,20 +1,17 @@
 'use client';
 import Link from 'next/link';
 import ProductCard from './ProductCard';
+import EmptyState from './EmptyState';
 import { useWishlist } from './WishlistContext';
 
-export default function WishlistClient({ products, dict, locale }) {
+export default function WishlistClient({ products, dict, locale, collections = [] }) {
   const wishlist = useWishlist();
   const saved = products.filter((p) => wishlist?.has(p.handle));
 
   if (saved.length === 0) {
     return (
-      <div className="empty" style={{ maxWidth: 560, margin: '0 auto' }}>
-        <div className="empty-glyph" aria-hidden="true">✦</div>
-        <h3>{dict.cartUi.empty}</h3>
-        <Link href={`/${locale}/shop`} className="btn btn-primary" style={{ marginTop: 10 }}>
-          {dict.cartUi.emptyCta}
-        </Link>
+      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+        <EmptyState dict={dict} locale={locale} collections={collections} title={dict.cartUi.empty} cta={dict.cartUi.emptyCta} ctaHref={`/${locale}/shop`} />
       </div>
     );
   }

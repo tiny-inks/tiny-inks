@@ -1,21 +1,20 @@
 'use client';
 import Link from 'next/link';
 import { useCart } from './CartContext';
+import Placeholder from './Placeholder';
+import FreeDeliveryBar from './FreeDeliveryBar';
+import EmptyState from './EmptyState';
 import { formatPrice } from '@/lib/products';
 
-export default function CartPageClient({ dict, locale }) {
+export default function CartPageClient({ dict, locale, collections = [] }) {
   const cart = useCart();
   const t = dict.cartUi;
   const tp = dict.cartPage;
 
   if (cart.items.length === 0) {
     return (
-      <div className="empty" style={{ maxWidth: 560, margin: '0 auto' }}>
-        <div className="empty-glyph" aria-hidden="true">✦</div>
-        <h3>{t.empty}</h3>
-        <Link href={`/${locale}/shop`} className="btn btn-primary" style={{ marginTop: 10 }}>
-          {t.emptyCta}
-        </Link>
+      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+        <EmptyState dict={dict} locale={locale} collections={collections} title={t.empty} cta={t.emptyCta} ctaHref={`/${locale}/shop`} />
       </div>
     );
   }
@@ -30,7 +29,7 @@ export default function CartPageClient({ dict, locale }) {
                 <img src={item.image} alt={item.title} />
               </Link>
             ) : (
-              <div className="cart-row-noimg" aria-hidden="true">✦</div>
+              <Link href={`/${locale}/product/${item.handle}`} className="cart-row-noimg"><Placeholder handle={item.handle} title={item.title} size="thumb" /></Link>
             )}
             <div className="cart-row-info">
               <Link href={`/${locale}/product/${item.handle}`} className="cart-row-title">
@@ -58,6 +57,7 @@ export default function CartPageClient({ dict, locale }) {
 
       <aside className="cart-summary">
         <h3>{tp.summary}</h3>
+        <FreeDeliveryBar subtotal={cart.subtotal} dict={dict} locale={locale} />
         <div className="subtotal">
           <span>{t.subtotal}</span>
           <span>{formatPrice(cart.subtotal, 'AED', locale)}</span>

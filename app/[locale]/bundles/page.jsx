@@ -3,7 +3,7 @@ import Reveal from '@/components/Reveal';
 import Shelf from '@/components/Shelf';
 import ProductCard from '@/components/ProductCard';
 import { getDict } from '@/lib/dictionaries';
-import { getProducts } from '@/lib/products';
+import { getProducts, getCollectionWithProducts } from '@/lib/products';
 
 export async function generateMetadata({ params }) {
   const dict = getDict(params.locale);
@@ -15,7 +15,14 @@ export default async function BundlesPage({ params }) {
   const dict = getDict(locale);
   const t = dict.drops;
   const products = await getProducts(locale);
-  const bundles = products.filter((p) => p.tags?.includes('bundle'));
+  let bundles = products.filter((p) => p.tags?.includes('bundle'));
+  if (bundles.length === 0) {
+    const gs = await getCollectionWithProducts('gift-sets', locale);
+    bundles = gs?.products || [];
+  }
+  if (bundles.length === 0) {
+    bundles = [...products].filter((p) => p.available && p.price >= 50).slice(0, 6);
+  }
   const newest = [...products]
     .filter((p) => p.available && !p.tags?.includes('bundle'))
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))

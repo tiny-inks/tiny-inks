@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import ProductCard from './ProductCard';
+import EmptyState from './EmptyState';
 import { COLOR_SWATCHES, COLOR_NAMES } from '@/lib/mock-data';
 
 const PER_PAGE_OPTIONS = [12, 24, 48];
@@ -25,6 +26,7 @@ export default function ShopClient({
   const [type, setType] = useState(() => searchParams.get('type') || 'all');
   const [query, setQuery] = useState(() => searchParams.get('q') || '');
   const [color, setColor] = useState(() => searchParams.get('color') || 'all');
+  const [brand, setBrand] = useState(() => searchParams.get('brand') || 'all');
   const [minP, setMinP] = useState(() => searchParams.get('min') || '');
   const [maxP, setMaxP] = useState(() => searchParams.get('max') || '');
   const [minDraft, setMinDraft] = useState(() => searchParams.get('min') || '');
@@ -43,15 +45,16 @@ export default function ShopClient({
     if (query.trim()) p.set('q', query.trim());
     if (type !== 'all') p.set('type', type);
     if (color !== 'all') p.set('color', color);
+    if (brand !== 'all') p.set('brand', brand);
     if (minP) p.set('min', minP);
     if (maxP) p.set('max', maxP);
     if (inStockOnly) p.set('avail', '1');
     if (sort !== 'featured') p.set('sort', sort);
     const qs = p.toString();
     router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false });
-  }, [query, type, color, minP, maxP, inStockOnly, sort, pathname, router]);
+  }, [query, type, color, brand, minP, maxP, inStockOnly, sort, pathname, router]);
 
-  useEffect(() => { setVisible(perPage); }, [perPage, query, type, color, minP, maxP, inStockOnly, sort]);
+  useEffect(() => { setVisible(perPage); }, [perPage, query, type, color, brand, minP, maxP, inStockOnly, sort]);
 
   /* bottom sheet behavior on mobile */
   useEffect(() => {
@@ -82,6 +85,11 @@ export default function ShopClient({
     [products]
   );
   const colorLabel = (c) => (COLOR_NAMES[locale] && COLOR_NAMES[locale][c]) || c;
+  const brands = useMemo(() => {
+    const m = new Map();
+    products.forEach((p) => { if (p.vendor) m.set(p.vendor, (m.get(p.vendor) || 0) + 1); });
+    return [...m.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count }));
+  }, [products]);
   const typeLabel = (key) => types.find((x) => x.key === key)?.label || key;
 
   const filtered = useMemo(() => {
@@ -92,6 +100,7 @@ export default function ShopClient({
       if (q && !`${p.title} ${p.productType}`.toLowerCase().includes(q)) return false;
       if (type !== 'all' && typeOf(p) !== type) return false;
       if (color !== 'all' && p.color !== color) return false;
+      if (brand !== 'all' && p.vendor !== brand) return false;
       if (min !== null && p.price < min) return false;
       if (max !== null && p.price > max) return false;
       if (inStockOnly && !p.available) return false;
@@ -106,7 +115,7 @@ export default function ShopClient({
       );
     }
     return list;
-  }, [products, type, color, minP, maxP, inStockOnly, sort, query]);
+  }, [products, type, color, brand, minP, maxP, inStockOnly, sort, query]);
 
   const shown = filtered.slice(0, visible);
 
@@ -114,6 +123,7 @@ export default function ShopClient({
   if (query.trim()) chips.push({ label: `“${query.trim()}”`, clear: () => setQuery('') });
   if (type !== 'all') chips.push({ label: typeLabel(type), clear: () => setType('all') });
   if (color !== 'all') chips.push({ label: colorLabel(color), clear: () => setColor('all') });
+  if (brand !== 'all') chips.push({ label: brand, clear: () => setBrand('all') });
   if (minP || maxP) chips.push({
     label: `${tu.priceRange}: ${minP || 0}–${maxP || '∞'}`,
     clear: () => { setMinP(''); setMaxP(''); setMinDraft(''); setMaxDraft(''); },
@@ -121,7 +131,7 @@ export default function ShopClient({
   if (inStockOnly) chips.push({ label: tu.availability, clear: () => setInStockOnly(false) });
 
   const clearAll = () => {
-    setQuery(''); setType('all'); setColor('all');
+    setQuery(''); setType('all'); setColor('all'); setBrand('all');
     setMinP(''); setMaxP(''); setMinDraft(''); setMaxDraft('');
     setInStockOnly(false);
   };
@@ -170,6 +180,20 @@ export default function ShopClient({
           <button type="submit" className="btn btn-ink btn-sm">{tu.apply}</button>
         </form>
       </div>
+
+      {brands.length > 1 && (
+        <div className="filter-group">
+          <h4>{tu.brand}</h4>
+          <div className="cat-list">
+            <button className={`cat-link ${brand === 'all' ? 'on' : ''}`} onClick={() => setBrand('all')}>{t.all}</button>
+            {brands.map((b) => (
+              <button key={b.name} className={`cat-link ${brand === b.name ? 'on' : ''}`} onClick={() => setBrand(b.name)}>
+                {b.name} <span>{b.count}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {colors.length > 0 && (
         <div className="filter-group">
@@ -272,11 +296,11 @@ export default function ShopClient({
 
         <div>
           {filtered.length === 0 ? (
-            <div className="empty">
-              <div className="empty-glyph" aria-hidden="true">✦</div>
-              <h3>{t.emptyTitle}</h3>
-              <p className="lede" style={{ margin: '0 auto 20px' }}>{t.emptyLede}</p>
-              <button className="btn" onClick={clearAll}>{tu.clearAll}</button>
+            <div>
+              <EmptyState dict={dict} locale={locale} collections={collections} title={t.emptyTitle} />
+              <div style={{ textAlign: 'center', marginTop: 14 }}>
+                <button className="btn btn-sm" onClick={clearAll}>{tu.clearAll}</button>
+              </div>
             </div>
           ) : (
             <>

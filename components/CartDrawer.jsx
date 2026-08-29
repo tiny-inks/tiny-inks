@@ -2,9 +2,12 @@
 import Link from 'next/link';
 import { useEffect } from 'react';
 import { useCart } from './CartContext';
+import Placeholder from './Placeholder';
+import FreeDeliveryBar from './FreeDeliveryBar';
+import EmptyState from './EmptyState';
 import { formatPrice } from '@/lib/products';
 
-export default function CartDrawer({ dict, locale }) {
+export default function CartDrawer({ dict, locale, collections = [] }) {
   const cart = useCart();
   const t = dict.cartUi;
 
@@ -30,16 +33,13 @@ export default function CartDrawer({ dict, locale }) {
 
         <div className="drawer-body">
           {cart.items.length === 0 ? (
-            <div style={{ textAlign: 'center', paddingBlock: 40 }}>
-              <p style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem' }}>{t.empty}</p>
-              <Link href={`/${locale}/shop`} className="btn btn-sm" onClick={() => cart.setOpen(false)}>
-                {t.emptyCta}
-              </Link>
+            <div onClick={(e) => { if (e.target.closest('a')) cart.setOpen(false); }}>
+              <EmptyState dict={dict} locale={locale} collections={collections} title={t.empty} cta={t.emptyCta} ctaHref={`/${locale}/shop`} />
             </div>
           ) : (
             cart.items.map((item) => (
               <div className="line-item" key={item.lineId}>
-                {item.image ? <img src={item.image} alt="" /> : <div style={{ width: 74, height: 92, borderRadius: 10, background: 'var(--cream)' }} />}
+                {item.image ? <img src={item.image} alt="" /> : <div className="line-ph"><Placeholder handle={item.handle} title={item.title} size="thumb" /></div>}
                 <div>
                   <h4>{item.title}</h4>
                   <div className="qty">
@@ -57,6 +57,7 @@ export default function CartDrawer({ dict, locale }) {
 
         {cart.items.length > 0 && (
           <div className="drawer-foot">
+            <FreeDeliveryBar subtotal={cart.subtotal} dict={dict} locale={locale} />
             <div className="subtotal">
               <span>{t.subtotal}</span>
               <span>{formatPrice(cart.subtotal, 'AED', locale)}</span>

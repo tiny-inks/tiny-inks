@@ -3,10 +3,11 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useCart } from './CartContext';
 import { useWishlist } from './WishlistContext';
+import Placeholder from './Placeholder';
 import { formatPrice } from '@/lib/products';
 
-/* Marketplace card: white, 1px border, square photo, prominent price,
-   always-visible round terracotta quick-add. Used everywhere. */
+/* Dense marketplace card: white, 1px border, 4:3 photo (or designed
+   placeholder), prominent price, always-visible round terracotta quick-add. */
 export default function ProductCard({ product, locale, dict }) {
   const cart = useCart();
   const wishlist = useWishlist();
@@ -28,11 +29,13 @@ export default function ProductCard({ product, locale, dict }) {
       <div className="mcard-media">
         <Link href={href} className="card-media-link" aria-label={product.title} tabIndex={-1}>
           {imgA ? (
-            <img className="main" src={imgA} alt={product.title} loading="lazy" />
+            <>
+              <img className="main" src={imgA} alt={product.title} loading="lazy" />
+              {imgB !== imgA && <img className="alt" src={imgB} alt="" loading="lazy" aria-hidden="true" />}
+            </>
           ) : (
-            <span className="card-noimg" aria-hidden="true">✦</span>
+            <Placeholder handle={product.handle} title={product.title} label={dict.cartUi.noImage} />
           )}
-          {imgA && imgB && <img className="alt" src={imgB} alt="" loading="lazy" aria-hidden="true" />}
         </Link>
         <button
           className={`wish-btn ${saved ? 'on' : ''}`}
@@ -64,7 +67,7 @@ export default function ProductCard({ product, locale, dict }) {
         )}
       </div>
       <Link href={href} className="mcard-info">
-        <div className="card-type">{product.productType}</div>
+        <div className="card-type">{product.vendor || product.productType}</div>
         <div className="mcard-title">{product.title}</div>
         <div className="mcard-price-row">
           <span className="mcard-price">{formatPrice(product.price, product.currency, locale)}</span>

@@ -1,18 +1,27 @@
 'use client';
 import { useState } from 'react';
+import Placeholder from './Placeholder';
 
-export default function Gallery({ images, title }) {
+export default function Gallery({ images, title, handle, noImageLabel }) {
   const [idx, setIdx] = useState(0);
-  const list = images && images.length ? images : [{ url: null, alt: title }];
+  const list = images && images.length ? images : [];
+  const main = list[idx];
+
+  if (list.length === 0) {
+    return (
+      <div className="pdp-gallery">
+        <div className="pdp-main">
+          <Placeholder handle={handle} title={title} label={noImageLabel} size="hero" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="pdp-gallery">
       {/* desktop: main image + thumbnails */}
       <div className="pdp-main">
-        {list[idx]?.url ? (
-          <img src={list[idx].url} alt={list[idx].alt || title} loading="eager" fetchPriority="high" />
-        ) : (
-          <span className="card-noimg" aria-hidden="true">✦</span>
-        )}
+        <img src={main.url} alt={main.alt || title} loading="eager" fetchPriority="high" />
       </div>
       {list.length > 1 && (
         <div className="pdp-thumbs">
@@ -25,17 +34,15 @@ export default function Gallery({ images, title }) {
       )}
       {/* phones: swipeable scroll-snap strip */}
       <div className="pdp-strip" aria-label={title}>
-        {list.map((img, i) =>
-          img.url ? (
-            <img
-              key={i}
-              src={img.url}
-              alt={img.alt || title}
-              loading={i === 0 ? 'eager' : 'lazy'}
-              fetchPriority={i === 0 ? 'high' : undefined}
-            />
-          ) : null
-        )}
+        {list.map((img, i) => (
+          <img
+            key={i}
+            src={img.url}
+            alt={img.alt || title}
+            loading={i === 0 ? 'eager' : 'lazy'}
+            fetchPriority={i === 0 ? 'high' : undefined}
+          />
+        ))}
       </div>
     </div>
   );
