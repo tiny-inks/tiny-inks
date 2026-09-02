@@ -1,6 +1,6 @@
 import '../globals.css';
 import { getDict, LOCALES } from '@/lib/dictionaries';
-import { getCollections } from '@/lib/products';
+import { getCollections, getProducts } from '@/lib/products';
 import { SITE_URL } from '@/lib/site';
 import { CartProvider } from '@/components/CartContext';
 import { WishlistProvider } from '@/components/WishlistContext';
@@ -43,7 +43,11 @@ export default async function LocaleLayout({ children, params }) {
   const locale = LOCALES.includes(params.locale) ? params.locale : 'en';
   const dict = getDict(locale);
   const dir = locale === 'ar' ? 'rtl' : 'ltr';
-  const collections = await getCollections(locale);
+  const [collections, products] = await Promise.all([getCollections(locale), getProducts(locale)]);
+  /* real vendor names, most-stocked first, for the mega menu + brand strips */
+  const vendorCount = new Map();
+  products.forEach((p) => { if (p.vendor && p.vendor !== 'Tiny Inks') vendorCount.set(p.vendor, (vendorCount.get(p.vendor) || 0) + 1); });
+  const brands = [...vendorCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 9).map(([n]) => n);
 
   return (
     <html
@@ -66,7 +70,7 @@ export default async function LocaleLayout({ children, params }) {
         </a>
         <CartProvider>
           <WishlistProvider>
-            <Header dict={dict} locale={locale} />
+            <Header dict={dict} locale={locale} collections={collections} brands={brands} />
             <main id="content">{children}</main>
             <Footer dict={dict} locale={locale} collections={collections} />
             <CartDrawer dict={dict} locale={locale} collections={collections} />

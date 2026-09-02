@@ -42,6 +42,19 @@ test.describe('keyboard-only', () => {
     await expect(page.locator('.hdr-nav .hdr-link')).toHaveCount(5);
   });
 
+  test('mega menu: caret opens 4 columns + promo tile, Escape closes', async ({ page }) => {
+    await page.goto('/en');
+    await page.locator('.mega-toggle').click();
+    const mega = page.locator('[data-testid=mega-panel]');
+    await expect(mega).toBeVisible();
+    await expect(mega.locator('.mega-col')).toHaveCount(4);
+    await expect(mega.locator('.mega-col h3').first()).toHaveText('Shop by Category');
+    expect(await mega.locator('.mega-col a').count()).toBeGreaterThanOrEqual(16);
+    await expect(mega.locator('.mega-promo img')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(mega).toBeHidden();
+  });
+
   test('Escape closes cart drawer and the phone menu', async ({ page }) => {
     await page.goto('/en/product/study-set');
     await page.locator('.buy-row .btn-primary').click();

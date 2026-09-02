@@ -1,16 +1,16 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import useReducedMotion from './reactbits/useReducedMotion';
-import { IMAGES, imgAlt } from '@/lib/images';
 
-/* Promo banner carousel: scroll-snap track (native swipe + RTL), auto-advance
-   6s, pauses on hover, arrows + dots, static under reduced motion. */
+/* Citron-style full-bleed hero: separate PORTRAIT image per slide on phones
+   (750×984 → 375×492) and a wide 1440×560 image on desktop, copy overlaid on a
+   scrim. Scroll-snap track (native swipe + RTL), dots, autoplay 6 s, paused on
+   hover, static under reduced motion. The owner swaps /public/promo/hero-N-*.jpg. */
 const SLIDE_META = [
-  { bg: 'var(--cream)', href: '/shop' },
-  { bg: 'var(--blush)', href: '/shop' },
-  { bg: 'var(--blue)', href: '/bundles' },
+  { img: 'hero-1', href: '/shop' },
+  { img: 'hero-2', href: '/shop' },
+  { img: 'hero-3', href: '/bundles' },
 ];
 
 export default function PromoCarousel({ dict, locale }) {
@@ -31,7 +31,7 @@ export default function PromoCarousel({ dict, locale }) {
     el.scrollBy({ left: delta, behavior: reduced === false ? 'smooth' : 'auto' });
   };
 
-  /* auto-advance */
+  /* auto-advance every 6 s */
   useEffect(() => {
     if (reduced !== false) return;
     const id = setInterval(() => {
@@ -67,7 +67,7 @@ export default function PromoCarousel({ dict, locale }) {
 
   return (
     <section
-      className="carousel wrap"
+      className="carousel hero-car"
       aria-roledescription="carousel"
       aria-label={dict.carousel.ariaLabel}
       onMouseEnter={() => { hoverRef.current = true; }}
@@ -76,28 +76,27 @@ export default function PromoCarousel({ dict, locale }) {
       <div className="carousel-track" ref={trackRef}>
         {slides.map((s, i) => {
           const meta = SLIDE_META[i % SLIDE_META.length];
-          const photo = IMAGES.promoSlides[i % IMAGES.promoSlides.length];
           return (
-            <div className="carousel-slide" key={i} style={{ background: meta.bg }} aria-hidden={idx !== i}>
-              <div className="carousel-copy">
+            <div className="carousel-slide hero-slide" key={i} aria-hidden={idx !== i}>
+              <picture>
+                <source media="(max-width: 700px)" srcSet={`/promo/${meta.img}-mobile.jpg`} />
+                <img
+                  src={`/promo/${meta.img}-desktop.jpg`}
+                  alt=""
+                  className="hero-img"
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  fetchPriority={i === 0 ? 'high' : undefined}
+                  width="1440"
+                  height="560"
+                />
+              </picture>
+              <div className="hero-scrim" aria-hidden="true" />
+              <div className="hero-copy">
                 <h2>{s.title}</h2>
                 <p>{s.line}</p>
                 <Link href={`/${locale}${meta.href}`} className="btn btn-primary" tabIndex={idx === i ? 0 : -1}>
                   {s.cta}
                 </Link>
-              </div>
-              <div className="carousel-photo">
-                {/* the first slide's photo is the LCP element — let next/image
-                    right-size and preload it */}
-                <Image
-                  src={photo.url}
-                  alt={imgAlt(photo, locale)}
-                  width={750}
-                  height={563}
-                  priority={i === 0}
-                  loading={i === 0 ? 'eager' : 'lazy'}
-                  sizes="(max-width: 700px) 92vw, 38vw"
-                />
               </div>
             </div>
           );

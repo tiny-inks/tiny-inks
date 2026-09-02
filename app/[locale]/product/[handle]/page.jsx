@@ -168,19 +168,20 @@ export default async function ProductPage({ params }) {
 
         {/* after the buy box, in this order: description · delivery/returns · also like · bought together · offers */}
         <div className="wrap pdp-below">
-          <div className="pdp-desc" id="description">
-            <h2>{t.descTitle}</h2>
-            {product.descriptionHtml ? (
-              <div className="prose" dangerouslySetInnerHTML={{ __html: product.descriptionHtml }} />
-            ) : paragraphs.length ? (
-              <div className="prose">{paragraphs.map((p, i) => <p key={i}>{p}</p>)}</div>
-            ) : (
-              <p className="prose">{t.noDesc}</p>
-            )}
-          </div>
-
           <div className="accordion" id="delivery-returns">
-            <details className="acc-item" open>
+            <details className="acc-item" open id="description">
+              <summary>{t.descTitle}</summary>
+              <div className="acc-body">
+                {product.descriptionHtml ? (
+                  <div className="prose" dangerouslySetInnerHTML={{ __html: product.descriptionHtml }} />
+                ) : paragraphs.length ? (
+                  <div className="prose">{paragraphs.map((p, i) => <p key={i}>{p}</p>)}</div>
+                ) : (
+                  <p className="prose">{t.noDesc}</p>
+                )}
+              </div>
+            </details>
+            <details className="acc-item">
               <summary>{t.deliveryTitle}</summary>
               <div className="acc-body">
                 <p>{t.shippingText}</p>

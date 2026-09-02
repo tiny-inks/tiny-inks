@@ -6,6 +6,9 @@ import { useWishlist } from './WishlistContext';
 import Placeholder from './Placeholder';
 import { formatPrice } from '@/lib/products';
 import { productImage } from '@/lib/product-images';
+import { COLOR_SWATCHES } from '@/lib/mock-data';
+
+const NEW_DAYS = 45;
 
 /* Photo-led card: square image is the hero (~70% of the card), then a 2-line
    name, then a bold price with the round quick-add beside it. Nothing else —
@@ -19,6 +22,9 @@ export default function ProductCard({ product, locale, dict, image }) {
   const href = `/${locale}/product/${product.handle}`;
   const saved = wishlist?.has(product.handle);
   const canAdd = product.available && product.variantId;
+  const isNew = product.available && (product.tags?.includes('new')
+    || (product.createdAt && (Date.now() - new Date(product.createdAt).getTime()) < NEW_DAYS * 86400 * 1000));
+  const swatch = product.color ? COLOR_SWATCHES[product.color] : null;
 
   return (
     <div className={`mcard ${!product.available ? 'is-soldout' : ''}`}>
@@ -41,8 +47,10 @@ export default function ProductCard({ product, locale, dict, image }) {
           </svg>
         </button>
         {!product.available && <span className="badge soldout">{dict.product.soldout}</span>}
+        {isNew && <span className="badge new">{dict.product.newBadge}</span>}
       </div>
       <div className="mcard-info">
+        {product.vendor ? <span className="mcard-brand">{product.vendor}</span> : null}
         <Link href={href} className="mcard-title">{product.title}</Link>
         <div className="mcard-foot">
           <span className="mcard-price">{formatPrice(product.price, product.currency, locale)}</span>
@@ -64,6 +72,11 @@ export default function ProductCard({ product, locale, dict, image }) {
             </button>
           ) : null}
         </div>
+        {swatch && (
+          <span className="mcard-swatches" aria-hidden="true">
+            <i style={{ background: swatch }} />
+          </span>
+        )}
       </div>
     </div>
   );

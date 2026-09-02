@@ -11,9 +11,10 @@ for (const locale of LOCALES) {
 
       // every key section exists, in the agreed order
       const order = [
-        '.carousel', '.usp-bar', '#best-sellers', '#new-arrivals', '#gift-sets', '#offers',
-        '.video-loop', '.pmq', '.color-strip', '.price-chips', '.gift-tiles', '.bulk-band',
-        '.faq-list', '#reviews .cards-3', '#newsletter', '.ig-strip',
+        '.carousel', '.usp-bar', '.tabbed', '#best-sellers', '#new-arrivals', '#gift-sets',
+        '#why-band', '#brands', '#offers', '.video-loop', '.pmq', '.color-strip',
+        '.price-chips', '.gift-tiles', '.bulk-band', '.faq-list', '#reviews .cards-3',
+        '#newsletter', '.ig-strip',
       ];
       let lastTop = -1;
       for (const sel of order) {
@@ -79,6 +80,22 @@ for (const locale of LOCALES) {
       // best sellers view-all navigates
       await page.locator('#best-sellers .section-head a.btn').click();
       await expect(page).toHaveURL(new RegExp(`/${locale}/shop$`));
+    });
+
+    test(`tabbed product rows switch and link out [${locale}]`, async ({ page }) => {
+      await page.goto(`/${locale}`);
+      const pills = page.locator('.tab-pill');
+      expect(await pills.count()).toBeGreaterThanOrEqual(2);
+      await expect(pills.first()).toHaveAttribute('aria-selected', 'true');
+      await expect(page.locator('.tab-grid .mcard').first()).toBeVisible();
+      const before = await page.locator('.tab-grid .mcard .mcard-title').first().textContent();
+      await pills.nth(1).click();
+      await expect(pills.nth(1)).toHaveAttribute('aria-selected', 'true');
+      await expect(page.locator('.tab-more-link')).toHaveAttribute('href', new RegExp(`/${locale}/shop/`));
+      // hero slides use a portrait image on phones
+      const src = await page.locator('.hero-slide img').first().evaluate((el) => el.currentSrc);
+      expect(src).toMatch(/hero-\d-(mobile|desktop)\.jpg/);
+      void before;
     });
 
     test(`marquee links to a product and pauses on hover [${locale}]`, async ({ page }, testInfo) => {

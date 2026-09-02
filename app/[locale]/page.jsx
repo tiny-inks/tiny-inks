@@ -7,6 +7,7 @@ import { withGridImages } from '@/lib/product-images';
 import PhotoFrame from '@/components/PhotoFrame';
 import Shelf from '@/components/Shelf';
 import UspBar from '@/components/UspBar';
+import TabbedRows from '@/components/TabbedRows';
 import { ShopByColor, ShopByPrice, GiftFinder, BulkBand, FaqShort } from '@/components/HomeSections';
 import { RecentlyViewedRow } from '@/components/RecentlyViewed';
 import { NewsletterForm } from '@/components/Forms';
@@ -16,16 +17,19 @@ import { getProducts, getCollections, getCollectionWithProducts } from '@/lib/pr
 import { FAQ } from '@/content/policies';
 import { PHOTOS, IMAGES, imgAlt } from '@/lib/images';
 
+/* PLACEHOLDER REVIEWS — clearly not real yet. Replace with genuine customer
+   reviews (name · city · product · quote) before launch; the "Verified" tag
+   must only ever appear on real, verifiable purchases. */
 const REVIEWS = {
   en: [
-    { q: 'The colors are even better in real life. My desk finally feels like mine.', a: 'Noor · Abu Dhabi' },
-    { q: 'Ordered as a gift, kept it for myself. Ordering again. Sorry, Sara.', a: 'Maha · Dubai' },
-    { q: 'Thick paper, zero ghosting, and the wrapping made me gasp.', a: 'Lina · Sharjah' },
+    { q: 'The colors are even better in real life. My desk finally feels like mine.', name: 'Noor', city: 'Abu Dhabi', product: 'The Everyday Notebook' },
+    { q: 'Ordered as a gift, kept it for myself. Ordering again. Sorry, Sara.', name: 'Maha', city: 'Dubai', product: 'First Ink Gift Box' },
+    { q: 'Thick paper, zero ghosting, and the wrapping made me gasp.', name: 'Lina', city: 'Sharjah', product: 'Daily Ritual Planner' },
   ],
   ar: [
-    { q: 'الألوان أجمل على الحقيقة. مكتبي أخيرًا صار يشبهني.', a: 'نور · أبوظبي' },
-    { q: 'طلبته كهدية واحتفظت به لنفسي. سأطلب مرة أخرى. آسفة يا سارة.', a: 'مها · دبي' },
-    { q: 'ورق سميك، ولا يظهر الحبر من الخلف، والتغليف أدهشني.', a: 'لينا · الشارقة' },
+    { q: 'الألوان أجمل على الحقيقة. مكتبي أخيرًا صار يشبهني.', name: 'نور', city: 'أبوظبي', product: 'دفتر اليوميات' },
+    { q: 'طلبته كهدية واحتفظت به لنفسي. سأطلب مرة أخرى. آسفة يا سارة.', name: 'مها', city: 'دبي', product: 'علبة هدايا الحبر الأول' },
+    { q: 'ورق سميك، ولا يظهر الحبر من الخلف، والتغليف أدهشني.', name: 'لينا', city: 'الشارقة', product: 'مخطط الروتين اليومي' },
   ],
 };
 
@@ -79,6 +83,19 @@ export default async function Home({ params }) {
     const gs = await getCollectionWithProducts('gift-sets', locale);
     bundles = gs?.products || [];
   }
+  /* Citron-style tabbed "Shop by product" — real collections, 8 products each */
+  const TAB_MATCH = [/notebook/i, /pen/i, /art/i, /gift/i];
+  const tabCols = TAB_MATCH.map((rx) => collections.find((c) => rx.test(c.title) || rx.test(c.handle))).filter(Boolean);
+  const tabs = (await Promise.all(tabCols.map(async (c) => {
+    const data = await getCollectionWithProducts(c.handle, locale);
+    return { key: c.handle, title: c.title, href: `/${locale}/shop/${c.handle}`, products: (data?.products || []).slice(0, 8) };
+  }))).filter((t) => t.products.length > 0);
+
+  /* real vendor names for the brand strip */
+  const vendorCount = new Map();
+  products.forEach((p) => { if (p.vendor && p.vendor !== 'Tiny Inks') vendorCount.set(p.vendor, (vendorCount.get(p.vendor) || 0) + 1); });
+  const brands = [...vendorCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([n]) => n);
+
   const reviews = REVIEWS[locale];
   /* short FAQ: delivery time, delivery cost, returns, gift wrap, bulk */
   const faqAll = FAQ[locale].items;
@@ -91,6 +108,9 @@ export default async function Home({ params }) {
 
       {/* 2 — trust row */}
       <UspBar dict={dict} />
+
+      {/* 2b — Citron-style tabbed product rows */}
+      <TabbedRows dict={dict} locale={locale} tabs={tabs} />
 
       {/* 3 — best sellers */}
       <ProductRow
@@ -128,6 +148,41 @@ export default async function Home({ params }) {
           locale={locale}
           dict={dict}
         />
+      )}
+
+      {/* 5b — why buy from us (image + bullets, Citron "built tough" pattern) */}
+      <section className="section row-section" id="why-band">
+        <div className="wrap why-band">
+          <div className="why-band-media">
+            <img src="/products/learning-activity-4.webp" alt="" loading="lazy" />
+          </div>
+          <div className="why-band-copy">
+            <h2>{dict.whyBand.title}</h2>
+            <ul className="why-band-list">
+              {dict.whyBand.bullets.map((w, i) => (
+                <li key={i}><span className="why-tick" aria-hidden="true">✓</span><div><strong>{w.t}</strong><small>{w.d}</small></div></li>
+              ))}
+            </ul>
+            <Link href={`/${locale}/about`} className="btn btn-primary">{dict.whyBand.cta}</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 5c — brands we stock (real vendor names) */}
+      {brands.length > 0 && (
+        <section className="section row-section brands-row" id="brands">
+          <div className="wrap">
+            <Reveal>
+              <div className="eyebrow">{dict.brandsRow.eyebrow}</div>
+              <h2>{dict.brandsRow.title}</h2>
+            </Reveal>
+            <div className="brand-cloud">
+              {brands.map((name) => (
+                <Link key={name} href={`/${locale}/shop?brand=${encodeURIComponent(name)}`} className="brand-pill">{name}</Link>
+              ))}
+            </div>
+          </div>
+        </section>
       )}
 
       {/* 6 — offers / promo band */}
@@ -173,9 +228,13 @@ export default async function Home({ params }) {
             {reviews.map((r, i) => (
               <Reveal key={i} delay={i * 0.08}>
                 <div className="review">
-                  <div className="stars">★★★★★</div>
+                  <div className="review-head">
+                    <div className="stars">★★★★★</div>
+                    <span className="review-verified">✓ {dict.reviewsUi.verified}</span>
+                  </div>
                   <p>“{r.q}”</p>
-                  <span>{r.a}</span>
+                  <span className="review-who">{r.name} · {r.city}</span>
+                  <span className="review-bought">{dict.reviewsUi.bought}: {r.product}</span>
                 </div>
               </Reveal>
             ))}

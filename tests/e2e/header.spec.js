@@ -61,6 +61,11 @@ test.describe('header', () => {
       expect(mb.y).toBeGreaterThanOrEqual(hb.y + hb.height - 2); // sub-pixel rounding
       expect(mb.x).toBeGreaterThanOrEqual(0);
       expect(mb.x + mb.width).toBeLessThanOrEqual(360.5);
+      // Shop groups collapse into accordions (Citron pattern)
+      const accs = menu.locator('.drw-acc');
+      await expect(accs).toHaveCount(4);
+      await accs.first().locator('summary').click();
+      expect(await accs.first().locator('a').count()).toBeGreaterThanOrEqual(5);
       await menu.locator('a[href$="/about"]').click();
       await expect(page).toHaveURL(new RegExp(`/${locale}/about$`));
       await expect(menu).toBeHidden();
