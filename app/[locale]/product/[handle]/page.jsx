@@ -131,9 +131,22 @@ export default async function ProductPage({ params }) {
             {illustrative && <p className="img-note">{t.illustrative}</p>}
           </div>
           <div className="pdp-buy">
-            {col ? <Link href={`/${locale}/shop/${col.handle}`} className="card-type">{col.title}</Link> : <div className="card-type">{product.productType}</div>}
             <h1 style={{ fontSize: 'clamp(1.9rem, 4vw, 3rem)' }}>{product.title}</h1>
-            {product.vendor && product.vendor !== 'Tiny Inks' ? <div className="pdp-vendor">{t.by} {product.vendor}</div> : null}
+            {/* brand · category — always visible, always tappable */}
+            <div className="pdp-facts">
+              {product.vendor && (
+                <span className="fact">
+                  <small>{t.brandLabel}</small>
+                  {product.vendor !== 'Tiny Inks'
+                    ? <Link href={`/${locale}/shop?brand=${encodeURIComponent(product.vendor)}`}>{product.vendor}</Link>
+                    : <b>{product.vendor}</b>}
+                </span>
+              )}
+              <span className="fact">
+                <small>{t.categoryLabel}</small>
+                {col ? <Link href={`/${locale}/shop/${col.handle}`}>{col.title}</Link> : <b>{product.productType}</b>}
+              </span>
+            </div>
             <div className="pdp-price-row">
               <div className="pdp-price">{formatPrice(product.price, product.currency, locale)}</div>
               {product.compareAtPrice ? <div className="mcard-compare">{formatPrice(product.compareAtPrice, product.currency, locale)}</div> : null}

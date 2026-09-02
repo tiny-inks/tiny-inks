@@ -1630,3 +1630,10 @@ h1 em, h2 em { color: var(--terracotta); }
 .pay-box { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px; min-height: 90px; }
 .confirm-check.fail { background: var(--blush); }
 .confirm-check.wait { background: var(--cream); }
+
+/* ---------- PDP: brand + category facts row ---------- */
+.pdp-facts { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 4px 0 10px; }
+.pdp-facts .fact { display: grid; gap: 1px; font-size: 0.95rem; font-weight: 700; }
+.pdp-facts small { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--slate); font-weight: 800; }
+.pdp-facts a { text-decoration: underline; text-underline-offset: 3px; }
+.pdp-facts a:hover { color: var(--terracotta-dark); }
