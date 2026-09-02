@@ -55,7 +55,8 @@ Built 2026-08-30 into the Tiny Inks storefront (Next.js 14, demo + live Shopify)
 | `PRINT_FILE_RETENTION_DAYS` | Cleanup threshold | 7 |
 | `CRON_SECRET` | Authorises `/api/print/cleanup` (Vercel sends it automatically to cron jobs) | Route refuses on Vercel production until set |
 | `STAFF_PASSWORD` | Staff login | Demo password `tinyinks` (warning shown) |
-| `SHOPIFY_ADMIN_TOKEN` | Staff queue reads real orders + writes status tags (Admin API custom app with `read_orders`, `write_orders`) | Queue shows demo orders from the local store |
+| `SHOPIFY_CLIENT_ID` + `SHOPIFY_CLIENT_SECRET` + `SHOPIFY_SHOP_DOMAIN` | Admin API via the client-credentials grant (Dev Dashboard app; `read_orders`, `write_orders`) — tokens auto-fetched/cached/refreshed | Queue shows demo orders from the local store |
+| `SHOPIFY_ADMIN_TOKEN` | Legacy static-token fallback (optional) | — |
 | `SHOPIFY_STORE_DOMAIN` | Admin API host | Falls back to `NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN` |
 | `SHOPIFY_ADMIN_API_VERSION` | Admin API version | `2026-01` |
 | `NEXT_PUBLIC_DEMO_MODE`, `NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN`, `NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN` | (existing) live cart/checkout | Demo cart |

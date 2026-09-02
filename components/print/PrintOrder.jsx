@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../CartContext';
-import { saveJob, lineLabel } from './PrintConfirmation';
+import { lineLabel } from './PrintConfirmation';
 import { PRINT, SIZES, COLORS, SIDES, FINISHING, FULFILMENT, computeQuote, buildCartLines, jobAttributes, fmtMoney } from '@/lib/print';
 import { fileKind, countPdfPages, pdfThumbnail, storageStatus, uploadFile } from '@/lib/print-client';
 
@@ -71,7 +71,6 @@ export default function PrintOrder({ dict, locale, live, business }) {
   const [drag, setDrag] = useState(false);
   const [storage, setStorage] = useState(null);
   const [opt, setOpt] = useState({ size: 'A4', color: 'bw', sided: 'single', copies: 1, finishing: 'none', fulfilment: 'collect', note: '' });
-  const [customer, setCustomer] = useState({ name: '', phone: '' });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [products, setProducts] = useState(null);
@@ -127,8 +126,7 @@ export default function PrintOrder({ dict, locale, live, business }) {
   const busyFiles = files.some((f) => f.status === 'checking' || f.status === 'uploading');
   const needsPages = files.some((f) => f.status === 'ready' && !(Number(f.pages) > 0));
   const filesOk = readyFiles.length > 0 && !busyFiles && !needsPages;
-  const customerOk = live || (customer.name.trim() && customer.phone.trim().length > 6);
-  const canContinue = step === 1 ? filesOk : step === 2 ? filesOk : filesOk && customerOk && !submitting;
+  const canContinue = step === 1 ? filesOk : step === 2 ? filesOk : filesOk && !submitting;
 
   const set = (k) => (v) => setOpt((o) => ({ ...o, [k]: v }));
   const goto = (n) => { setStep(n); setQuoteOpen(false); setTimeout(() => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30); };
@@ -153,29 +151,10 @@ export default function PrintOrder({ dict, locale, live, business }) {
         setSubmitting(false);
         return;
       }
-      const job = {
-        demo: !live, quote, options: opt, note: opt.note,
-        files: readyFiles.map((f) => ({ name: f.name, pages: f.pages, ref: f.ref, url: f.url })),
-        customer, createdAt: new Date().toISOString(),
-      };
-      if (live) {
-        await cart.addLines(lines, { open: false });
-        saveJob(job);
-        router.push(`/${locale}/print/confirmation`);
-        return;
-      }
-      const r = await fetch('/api/print/demo-order', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          total: quote.total, customer, fulfilment: quote.fulfilment, note: opt.note, pagesPrinted: quote.totalPages,
-          items: lines.map((l) => ({ title: l.title, quantity: l.qty, amount: Math.round(l.price * l.qty * 100) / 100, attributes: l.attributes })),
-        }),
-      });
-      const j = await r.json();
-      if (!r.ok || !j.ok) throw new Error(j.error || 'demo_order');
+      /* the job rides the normal cart into the on-site checkout (Stripe / COD) —
+         orders land in Shopify (or the demo order book) via the checkout, tagged print-service */
       await cart.addLines(lines, { open: false });
-      saveJob({ ...job, orderName: j.order.name, paid: true });
-      router.push(`/${locale}/print/confirmation`);
+      router.push(`/${locale}/checkout`);
     } catch (e) {
       console.error(e);
       setSubmitError(t.errors.submit);
@@ -365,18 +344,6 @@ export default function PrintOrder({ dict, locale, live, business }) {
                 </button>
               ))}
             </div>
-            {!live && (
-              <div className="delivery-grid" style={{ marginTop: 18 }}>
-                <div className="field">
-                  <label htmlFor="pc-name">{dict.delivery.name} *</label>
-                  <input id="pc-name" className="input" autoComplete="name" value={customer.name} onChange={(e) => setCustomer((c) => ({ ...c, name: e.target.value }))} />
-                </div>
-                <div className="field">
-                  <label htmlFor="pc-phone">{dict.delivery.phone} *</label>
-                  <input id="pc-phone" className="input" type="tel" inputMode="tel" dir="ltr" placeholder="+971 5x xxx xxxx" value={customer.phone} onChange={(e) => setCustomer((c) => ({ ...c, phone: e.target.value }))} />
-                </div>
-              </div>
-            )}
             <div className="review">
               <h3>{t.reviewTitle}</h3>
               <ul className="review-list">

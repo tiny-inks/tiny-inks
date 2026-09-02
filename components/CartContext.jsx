@@ -177,6 +177,14 @@ export function CartProvider({ children }) {
   /* Hand-off to Shopify checkout. Returns false (and flags the form) when the
      delivery details are incomplete; otherwise attaches them to the cart and
      redirects. Attaching is best-effort — a failed mutation never blocks paying. */
+  /* wipe the basket after a successful on-site checkout */
+  const clearCart = useCallback(() => {
+    setItems([]);
+    setCartId(null);
+    setCheckoutUrl(null);
+    try { localStorage.removeItem(LS_ID); localStorage.setItem(LS_DEMO, '[]'); } catch {}
+  }, []);
+
   const checkout = useCallback(async () => {
     if (!live || !checkoutUrl) return false;
     if (!deliveryValid) { setDeliveryError(true); return false; }
@@ -206,7 +214,7 @@ export function CartProvider({ children }) {
   const count = useMemo(() => items.reduce((s, x) => s + x.qty, 0), [items]);
   const subtotal = useMemo(() => items.reduce((s, x) => s + x.qty * x.price, 0), [items]);
 
-  const value = { items, count, subtotal, open, setOpen, add, addLines, setQty, remove, checkout, live, busy, delivery, setDelivery, deliveryValid, deliveryError };
+  const value = { items, count, subtotal, open, setOpen, add, addLines, setQty, remove, checkout, clearCart, live, busy, delivery, setDelivery, deliveryValid, deliveryError };
   return <CartCtx.Provider value={value}>{children}</CartCtx.Provider>;
 }
 

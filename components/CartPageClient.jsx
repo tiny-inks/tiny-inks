@@ -4,7 +4,6 @@ import { useCart } from './CartContext';
 import Placeholder from './Placeholder';
 import FreeDeliveryBar from './FreeDeliveryBar';
 import EmptyState from './EmptyState';
-import DeliveryDetails from './DeliveryDetails';
 import { formatPrice } from '@/lib/products';
 
 export default function CartPageClient({ dict, locale, collections = [] }) {
@@ -19,11 +18,6 @@ export default function CartPageClient({ dict, locale, collections = [] }) {
       </div>
     );
   }
-
-  const onCheckout = async () => {
-    const ok = await cart.checkout();
-    if (ok === false) document.getElementById('delivery-details')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
 
   return (
     <div className="cart-layout">
@@ -66,9 +60,6 @@ export default function CartPageClient({ dict, locale, collections = [] }) {
         <Link href={`/${locale}/shop`} className="btn btn-ghost btn-sm" style={{ justifySelf: 'start' }}>
           {tp.continue}
         </Link>
-
-        {/* delivery details travel to Shopify checkout as attributes + note */}
-        <DeliveryDetails dict={dict} locale={locale} />
       </div>
 
       <aside className="cart-summary">
@@ -79,19 +70,8 @@ export default function CartPageClient({ dict, locale, collections = [] }) {
           <span>{formatPrice(cart.subtotal, 'AED', locale)}</span>
         </div>
         <p className="drawer-note" style={{ textAlign: 'start' }}>✦ {tp.shippingNote}</p>
-        {cart.live ? (
-          <>
-            <button className="btn btn-primary" onClick={onCheckout} disabled={cart.busy}>{cart.busy ? t.checkingOut : t.checkout}</button>
-            {cart.deliveryError && <div className="form-err" role="alert">{dict.delivery.missing}</div>}
-          </>
-        ) : (
-          <>
-            <button className="btn btn-primary" disabled style={{ opacity: 0.55, cursor: 'not-allowed' }}>
-              {t.checkout}
-            </button>
-            <div className="drawer-note">{t.demoNote}</div>
-          </>
-        )}
+        {/* payment happens on tinyinks.ae (Stripe / cash on delivery) */}
+        <Link href={`/${locale}/checkout`} className="btn btn-primary" data-testid="go-checkout">{t.checkout}</Link>
         <div className="cart-help">
           <h4>{tp.goodToKnow}</h4>
           <Link href={`/${locale}/policies/shipping`}>{dict.policies.shipping}</Link>

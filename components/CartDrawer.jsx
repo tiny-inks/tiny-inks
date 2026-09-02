@@ -86,23 +86,10 @@ export default function CartDrawer({ dict, locale, collections = [] }) {
             >
               {t.viewCart}
             </Link>
-            {cart.live ? (
-              <button
-                className="btn btn-primary"
-                onClick={() => {
-                  /* details are captured on the cart page; go there if they are missing */
-                  if (!cart.deliveryValid) { cart.setOpen(false); window.location.href = `/${locale}/cart#delivery-details`; return; }
-                  cart.checkout();
-                }}
-              >
-                {t.checkout}
-              </button>
-            ) : (
-              <>
-                <button className="btn btn-primary" disabled style={{ opacity: 0.55, cursor: 'not-allowed' }}>{t.checkout}</button>
-                <div className="drawer-note">✦ {t.demoNote}</div>
-              </>
-            )}
+            {/* payment happens on-site now (Stripe / COD) — demo mode included */}
+            <Link href={`/${locale}/checkout`} className="btn btn-primary" onClick={() => cart.setOpen(false)} data-testid="go-checkout">
+              {t.checkout}
+            </Link>
           </div>
         )}
       </aside>

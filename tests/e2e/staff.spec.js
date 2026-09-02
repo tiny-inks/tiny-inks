@@ -35,14 +35,34 @@ test.describe('staff app', () => {
     await expect(page).toHaveURL(/\/staff\/login/);
   });
 
-  test('queue: cards show job details, status flow advances and persists, notify + file links', async ({ page }) => {
+  test('queue: cards show job details, status flow advances and persists, notify + file links', async ({ page, request }) => {
     test.setTimeout(120_000);
+    /* create a fresh known print order so the test never depends on drifting seed state */
+    const seeded = await (await request.post('/api/print/demo-order', {
+      data: {
+        total: 27.5, pagesPrinted: 12, fulfilment: 'collect', note: 'seeded by staff.spec',
+        customer: { name: 'Spec Customer', phone: '+971500000009', email: 'spec@example.com' },
+        items: [{
+          title: 'A4 · Colour · Single-sided', quantity: 12, amount: 24,
+          attributes: [
+            { key: 'Files', value: 'sample.pdf' }, { key: 'Pages', value: 'sample.pdf: 3' },
+            { key: 'Paper size', value: 'A4' }, { key: 'Colour', value: 'Colour' },
+            { key: 'Sides', value: 'Single-sided' }, { key: 'Copies', value: '4' },
+            { key: 'Finishing', value: 'staple' }, { key: 'Fulfilment', value: 'Collect from shop' },
+            { key: 'File ref', value: 'demo:sample.pdf' },
+          ],
+        }],
+      },
+    })).json();
+    expect(seeded.ok).toBe(true);
+    const myOrder = seeded.order.name;
+
     await login(page);
     const cards = page.locator('[data-testid=job-card]');
     await expect(cards.first()).toBeVisible();
     expect(await cards.count()).toBeGreaterThanOrEqual(3);
 
-    const card = cards.first();
+    const card = cards.filter({ hasText: myOrder }).first();
     await expect(card.locator('.job-no')).toHaveText(/#P\d+/);
     await expect(card.locator('[data-testid=job-chips]')).toContainText(/A4|A3/);
     await expect(card.locator('.job-contact a[href^="tel:"]')).toBeVisible();
@@ -55,8 +75,8 @@ test.describe('staff app', () => {
     expect(href).toMatch(/تايني انكس/);
 
     // status flow: new → printing → ready → done (one tap each), persists after reload
-    const no = (await cards.filter({ has: page.locator('.job-status.s-new') }).first().locator('.job-no').textContent()).trim();
-    const fresh = cards.filter({ hasText: no }).first(); // pin the card by order number — its status is about to change
+    const no = myOrder;
+    const fresh = card; // the order this test created — status is about to change
     await fresh.locator('[data-testid=next-status]').click();
     await expect(fresh.locator('.job-status')).toHaveText(/Printing/);
     await page.reload();

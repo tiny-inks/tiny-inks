@@ -116,8 +116,8 @@ test.describe('print service — customer', () => {
     await expect(page.locator('.file-row')).toHaveCount(before - 1);
   });
 
-  test('demo order: attributes on the cart line, confirmation page, staff queue receives it', async ({ page }) => {
-    test.skip(LIVE, 'live mode adds to the Shopify cart instead');
+  test('print job rides the cart into the on-site checkout with its attributes', async ({ page }) => {
+    test.skip(LIVE, 'demo-mode variant ids; live uses the hidden Shopify products');
     test.setTimeout(120_000);
     await page.goto('/en/print');
     await uploadSample(page);
@@ -127,14 +127,10 @@ test.describe('print service — customer', () => {
     await page.locator('[data-testid=opt-spiral]').click();
     await page.locator('#print-note').fill('clear cover please');
     await next(page);
-    await page.locator('#pc-name').fill('E2E Tester');
-    await page.locator('#pc-phone').fill('+971500000001');
     await page.locator('[data-testid=print-submit]').click();
-    await expect(page).toHaveURL(/\/en\/print\/confirmation/);
-    await expect(page.locator('.confirm-order strong')).toHaveText(/#P\d+/);
-    await expect(page.locator('.confirm-files li')).toHaveCount(1);
-    await expect(page.locator('.confirm-card').first()).toContainText('clear cover please');
-    await expect(page.locator('a[href^="https://wa.me/"]').first()).toBeVisible();
+    await expect(page).toHaveURL(/\/en\/checkout$/);
+    // the server-priced summary shows the print lines
+    await expect(page.locator('[data-testid=co-quote]')).toContainText(/print-page-a4-colour-single/);
 
     // the job is in the cart with its attributes
     const items = await page.evaluate(() => JSON.parse(localStorage.getItem('ti_demo_cart') || '[]'));

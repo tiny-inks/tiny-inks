@@ -17,6 +17,8 @@ export default defineConfig({
     url: 'http://localhost:3000/en',
     reuseExistingServer: false,
     timeout: 60_000,
+    /* lets the webhook idempotency tests sign events themselves; a real secret from env wins */
+    env: { ...process.env, STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || 'whsec_test_e2e' },
   },
   projects: [
     { name: 'desktop', use: { browserName: 'chromium', viewport: { width: 1440, height: 900 } } },

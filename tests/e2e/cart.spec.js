@@ -43,28 +43,17 @@ test.describe('product → cart journey', () => {
     assertClean(errors);
   });
 
-  test('checkout hand-off', async ({ page }) => {
-    test.skip(
-      !LIVE,
-      'Requires real Shopify credentials in .env.local — recorded as a config blocker in quality-report.md'
-    );
+  test('checkout buttons lead to the on-site checkout (cart page + drawer)', async ({ page }) => {
     await page.goto('/en/product/daily-ritual-planner');
     await page.locator('.buy-row .btn-primary').click();
+    // drawer checkout → /checkout
+    await page.locator('.drawer [data-testid=go-checkout]').click();
+    await expect(page).toHaveURL(/\/en\/checkout$/);
+    await expect(page.locator('.stepper.four')).toBeVisible();
+    // cart page checkout → /checkout
     await page.goto('/en/cart');
-    await page.locator('.cart-summary .btn-primary').click();
-    // reach Shopify checkout, never pay
-    await page.waitForURL(/checkout|myshopify/, { timeout: 20_000 });
-  });
-
-  test('demo checkout is clearly disabled with a note', async ({ page }) => {
-    test.skip(LIVE, 'live mode has a real checkout instead');
-    await page.goto('/en/product/daily-ritual-planner');
-    await page.locator('.buy-row .btn-primary').click();
-    await page.keyboard.press('Escape');
-    await page.goto('/en/cart');
-    await expect(page.locator('.cart-summary .btn-primary')).toBeDisabled();
-    // two notes exist (shipping + demo); the demo note is the last one
-    await expect(page.locator('.cart-summary .drawer-note').last()).toBeVisible();
+    await page.locator('.cart-summary [data-testid=go-checkout]').click();
+    await expect(page).toHaveURL(/\/en\/checkout$/);
   });
 
   test('cart survives reload and back/forward', async ({ page }) => {

@@ -103,13 +103,22 @@ it says all good.
    The site requests Arabic automatically on `/ar` pages via `@inContext(language: AR)` — untranslated products fall back to English.
 
 ### E. Point the site at the store
-Copy `.env.example` → `.env.local` and fill in:
+Copy `.env.example` → `.env.local`. Every variable is documented inline there,
+grouped by feature and marked **required / optional** and **server-only**:
 
-```
-NEXT_PUBLIC_DEMO_MODE=false
-NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN=your-store.myshopify.com
-NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN=xxxxxxxxxxxx
-```
+| Group | Variables |
+|---|---|
+| Mode | `NEXT_PUBLIC_DEMO_MODE` |
+| Shopify Storefront | `NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN`, `NEXT_PUBLIC_SHOPIFY_STOREFRONT_TOKEN`, `NEXT_PUBLIC_SHOPIFY_API_VERSION` |
+| Shopify Admin (client-credentials grant, server-only) | `SHOPIFY_CLIENT_ID`, `SHOPIFY_CLIENT_SECRET`, `SHOPIFY_SHOP_DOMAIN`, `SHOPIFY_ADMIN_API_VERSION` (+ legacy `SHOPIFY_ADMIN_TOKEN`) |
+| Stripe checkout | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, server-only `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, optional `CHECKOUT_ALERT_WEBHOOK` |
+| Print module (server-only) | `BLOB_READ_WRITE_TOKEN`, `PRINT_SIGNING_SECRET`, `PRINT_LINK_TTL_HOURS`, `PRINT_FILE_RETENTION_DAYS`, `CRON_SECRET` |
+| Staff app (server-only) | `STAFF_PASSWORD` |
+| Contact form (server-only) | `RESEND_API_KEY` + `CONTACT_TO_EMAIL` (+ `CONTACT_FROM_EMAIL`) or `FORMSPREE_FORM_ID` |
+| Shop details | `NEXT_PUBLIC_WHATSAPP_NUMBER`, `NEXT_PUBLIC_INSTAGRAM_URL`, `NEXT_PUBLIC_TIKTOK_URL`, `NEXT_PUBLIC_CONTACT_EMAIL`, `NEXT_PUBLIC_SHOP_ADDRESS`, `NEXT_PUBLIC_SHOP_MAPS_URL`, `NEXT_PUBLIC_SHOP_HOURS` |
+| SEO | `NEXT_PUBLIC_SITE_URL` |
+
+Server-only variables must never gain a `NEXT_PUBLIC_` prefix.
 
 Restart `npm run dev`. Products, cart, and the **Checkout** button (real Shopify checkout,
 payments, and orders in the admin) are now live.

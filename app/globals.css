@@ -1612,3 +1612,21 @@ h1 em, h2 em { color: var(--terracotta); }
 .confirm-opts dt { color: var(--slate); font-weight: 700; font-size: 0.78rem; }
 .confirm-opts dd { margin: 0; font-weight: 700; }
 .confirm-steps { margin: 0; padding-inline-start: 20px; display: grid; gap: 8px; color: #4b4c52; }
+
+/* ---------- on-site checkout ---------- */
+.stepper.four { grid-template-columns: repeat(4, 1fr); }
+.stepper.four::before { left: 12.5%; right: 12.5%; }
+[dir='rtl'] .stepper::before { left: 16.6%; right: 16.6%; }
+[dir='rtl'] .stepper.four::before { left: 12.5%; right: 12.5%; }
+.pay-methods { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 640px) { .pay-methods { grid-template-columns: 1fr; } }
+.pay-method {
+  display: grid; gap: 3px; text-align: start; padding: 14px 16px; min-height: 64px;
+  border-radius: 16px; border: 2px solid var(--line); background: #fff; font-family: inherit; color: var(--ink);
+  transition: border-color 0.2s, background 0.2s;
+}
+.pay-method small { color: var(--slate); font-weight: 700; font-size: 0.78rem; }
+.pay-method.on { border-color: var(--terracotta); background: color-mix(in srgb, var(--terracotta) 12%, #fff); }
+.pay-box { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px; min-height: 90px; }
+.confirm-check.fail { background: var(--blush); }
+.confirm-check.wait { background: var(--cream); }
