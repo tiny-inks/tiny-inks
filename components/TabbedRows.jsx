@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import ProductCard from './ProductCard';
+import Shelf from './Shelf';
 import { withGridImages } from '@/lib/product-images';
 
 /* Citron-style "Shop by product": centred heading, pill tabs, a 4-up grid of
@@ -29,14 +30,17 @@ export default function TabbedRows({ dict, locale, tabs }) {
               onClick={() => setActive(i)}
               data-testid={`tab-${t.key}`}
             >
+              <span className="tab-wave" aria-hidden="true" />
               {t.title}
             </button>
           ))}
         </div>
-        <div className="grid tab-grid" role="tabpanel" id={`tabpanel-${tab.key}`} aria-labelledby={`tab-${tab.key}`}>
-          {withGridImages(tab.products.slice(0, 8)).map(([p, image]) => (
-            <ProductCard key={p.id} product={p} locale={locale} dict={dict} image={image} />
-          ))}
+        <div className="tab-grid" role="tabpanel" id={`tabpanel-${tab.key}`} aria-labelledby={`tab-${tab.key}`}>
+          <Shelf ariaLabel={tab.title}>
+            {withGridImages(tab.products.slice(0, 8)).map(([p, image]) => (
+              <ProductCard key={p.id} product={p} locale={locale} dict={dict} image={image} />
+            ))}
+          </Shelf>
         </div>
         <div className="tab-more">
           <Link href={tab.href} className="tab-more-link">

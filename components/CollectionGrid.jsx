@@ -18,7 +18,7 @@ export function collectionPhrase(c, dict) {
 
 export default function CollectionGrid({ collections, locale, dict, current = null, id = 'categories' }) {
   return (
-    <nav className="colgrid" aria-label={dict.shopUi.categories} id={id}>
+    <nav className="colgrid cg-panel" aria-label={dict.shopUi.categories} id={id}>
       {collections.map((c, i) => {
         const img = collectionTileImage(c);
         const on = current === c.handle;

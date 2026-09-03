@@ -171,13 +171,25 @@ h1 em, h2 em { color: var(--terracotta); }
 
 /* ---------- announcement bar ---------- */
 .announce {
-  background: var(--ink); color: var(--paper);
-  text-align: center; font-size: 0.8rem; font-weight: 700;
-  letter-spacing: 0.06em; padding: 7px 12px; overflow: hidden;
-  white-space: nowrap; text-overflow: ellipsis;
+  background: var(--ink); color: var(--paper); overflow: hidden; padding: 9px 0;
 }
-.announce-text { display: inline-block; animation: announceIn 0.5s var(--ease); }
-@keyframes announceIn { from { opacity: 0; transform: translateY(8px); } }
+.announce-track {
+  display: flex; width: max-content; animation: annMarquee 32s linear infinite; will-change: transform;
+}
+.announce:hover .announce-track, .announce:focus-within .announce-track { animation-play-state: paused; }
+.announce-group { display: flex; align-items: center; flex: 0 0 auto; }
+.announce-item {
+  font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; color: var(--paper);
+}
+.announce-sep { margin: 0 22px; color: var(--mustard); }
+@keyframes annMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+[dir='rtl'] .announce-track { animation-name: annMarqueeRtl; }
+@keyframes annMarqueeRtl { from { transform: translateX(0); } to { transform: translateX(50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .announce { overflow-x: auto; }
+  .announce-track { animation: none; }
+  .announce-group[aria-hidden='true'] { display: none; }
+}
 
 /* ---------- header: ONE compact sticky row ---------- */
 :root { --header-h: 60px; }
@@ -247,7 +259,7 @@ h1 em, h2 em { color: var(--terracotta); }
   font-weight: 800; font-size: 0.8rem; letter-spacing: 0.06em;
 }
 .locale-btn:hover { border-color: var(--ink); }
-.menu-toggle, .search-toggle, .mk-drawer { display: none; }
+.menu-toggle, .search-toggle, .mk-drawer, .mk-backdrop { display: none; }
 
 @media (max-width: 900px) {
   .hdr-nav, .mk-search-desktop, .hdr-locale { display: none; }
@@ -264,18 +276,25 @@ h1 em, h2 em { color: var(--terracotta); }
   .hdr-search[hidden] { display: none; }
   .mk-search-mobile { width: 100%; }
 
-  /* the phone menu hangs from the header (absolute inside the sticky row) */
+  /* phone menu: true slide-in side panel from the sticky header, Citron-style */
   .mk-drawer {
     display: flex; flex-direction: column;
-    position: absolute; top: 100%; inset-inline: 0;
-    max-height: calc(100dvh - var(--header-h)); overflow-y: auto;
-    background: var(--paper-soft); border-bottom: 1px solid var(--line);
+    position: absolute; top: 100%; inset-inline-start: 0; z-index: 56;
+    width: min(88vw, 380px); max-height: calc(100dvh - var(--header-h)); overflow-y: auto;
+    background: var(--paper-soft); border-inline-end: 1px solid var(--line);
     padding: 6px 20px calc(24px + env(safe-area-inset-bottom));
     box-shadow: 0 24px 40px -20px rgba(38, 39, 43, 0.35);
-    opacity: 0; visibility: hidden; transform: translateY(-8px);
-    transition: opacity 0.25s, transform 0.3s var(--ease), visibility 0s 0.3s;
+    transform: translateX(-100%); visibility: hidden;
+    transition: transform 0.25s ease, visibility 0.25s ease;
   }
-  .mk-drawer.open { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+  [dir='rtl'] .mk-drawer { transform: translateX(100%); }
+  .mk-drawer.open { transform: translateX(0); visibility: visible; }
+  .mk-backdrop {
+    display: block; position: fixed; inset: 0; top: var(--header-h); z-index: 55;
+    background: rgba(38, 39, 43, 0.5); border: none; padding: 0; cursor: default;
+    opacity: 0; visibility: hidden; transition: opacity 0.25s ease, visibility 0.25s ease;
+  }
+  .mk-backdrop.open { opacity: 1; visibility: visible; }
   .mk-drawer > a {
     font-family: var(--font-display); font-size: 1.35rem; font-weight: 500;
     padding-block: 14px; border-bottom: 1px solid var(--line); display: block;
@@ -501,24 +520,32 @@ h1 em, h2 em { color: var(--terracotta); }
 /* ---------- product card: photo first ---------- */
 .mcard {
   display: flex; flex-direction: column;
-  background: #fff; border: 1px solid var(--line); border-radius: 14px;
-  overflow: hidden;
-  transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+  background: #fff; border: 2px solid var(--ink); border-radius: 16px;
+  padding: 14px 14px 18px; overflow: visible;
+  transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease), border-color 0.35s ease;
 }
-.mcard:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
-.mcard-media { position: relative; aspect-ratio: 1 / 1; background: var(--cream); }
+.mcard:hover { transform: translateY(-5px); box-shadow: 0 14px 30px rgba(38, 39, 43, 0.18); }
+.mcard-media {
+  position: relative; aspect-ratio: 1 / 1; background: var(--cream);
+  border: 1px solid rgba(38, 39, 43, 0.18); border-radius: 12px; overflow: hidden;
+}
+.mcard-media img { transition: transform 0.6s var(--ease); }
+.mcard:hover .mcard-media img { transform: scale(1.05); }
 .card-media-link { position: absolute; inset: 0; display: block; }
 .mcard-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .mcard.is-soldout .mcard-media img { opacity: 0.6; filter: saturate(0.7); }
 .badge {
-  position: absolute; top: 10px; inset-inline-end: 10px; z-index: 2;
+  position: absolute; top: 14px; inset-inline-end: 14px; z-index: 2;
   font-size: 0.66rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
-  padding: 5px 10px; border-radius: 999px; background: var(--mustard); color: var(--ink);
+  padding: 6px 13px; border-radius: 999px; background: var(--mustard); color: var(--ink);
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1); transition: transform 0.35s ease;
 }
 .badge.soldout { background: var(--slate); color: #fff; }
+.badge.new { inset-inline-end: auto; inset-inline-start: 14px; }
+.mcard:hover .badge { transform: translateY(-2px); }
 @media (hover: none) { .mcard:active { transform: scale(0.985); } }
 .wish-btn {
-  position: absolute; top: 6px; inset-inline-start: 6px; z-index: 3;
+  position: absolute; top: 10px; inset-inline-start: 10px; z-index: 3;
   width: 44px; height: 44px; border-radius: 999px; border: none;
   background: rgba(253, 247, 238, 0.94); color: var(--ink);
   display: grid; place-items: center;
@@ -527,7 +554,7 @@ h1 em, h2 em { color: var(--terracotta); }
 .wish-btn:hover { transform: scale(1.08); }
 .wish-btn:active { transform: scale(0.94); }
 .wish-btn.on { color: var(--terracotta-dark); }
-.mcard-info { display: grid; gap: 4px; padding: 9px 10px 10px; }
+.mcard-info { display: grid; gap: 4px; padding: 11px 2px 0; }
 .mcard-title {
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   font-weight: 600; font-size: 0.82rem; line-height: 1.3; min-height: 2.6em; color: var(--ink);
@@ -867,8 +894,25 @@ h1 em, h2 em { color: var(--terracotta); }
 .footer-pay { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-block: 16px; border-top: 1px solid rgba(251, 240, 228, 0.15); font-size: 0.85rem; opacity: 0.9; }
 .footer-arabic { font-family: var(--f-plexar), sans-serif; opacity: 0.85; }
 .footer h3 { font-family: var(--font-body); font-size: 0.82rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--sand); margin: 0 0 16px; font-weight: 700; }
-.footer a { display: block; padding-block: 5px; opacity: 0.85; }
+.footer a { position: relative; display: block; padding-block: 5px; opacity: 0.85; width: fit-content; }
+.footer a::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 2px; height: 1px; background: currentColor;
+  transform: scaleX(0); transform-origin: left; transition: transform 0.35s var(--ease);
+}
+[dir='rtl'] .footer a::after { transform-origin: right; }
 .footer a:hover { opacity: 1; color: var(--mustard); }
+.footer a:hover::after { transform: scaleX(1); }
+.footer-col summary { cursor: default; list-style: none; }
+.footer-col summary::-webkit-details-marker { display: none; }
+.footer-col summary h3 { margin: 0; }
+@media (max-width: 749px) {
+  .footer-col summary { cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding-block: 4px; }
+  .footer-col summary::after { content: '+'; font-size: 1.1rem; color: var(--sand); }
+  .footer-col[open] summary::after { content: '\2212'; }
+  .footer-col summary h3 { margin: 0; }
+  .footer-col { border-top: 1px solid rgba(251, 240, 228, 0.15); padding-block: 6px; }
+  .footer-col .footer-col-links { padding-bottom: 10px; }
+}
 .footer-brand img { height: 54px; margin-bottom: 14px; }
 .footer-brand p { opacity: 0.75; font-size: 0.95rem; max-width: 30ch; }
 .footer-bottom { border-top: 1px solid rgba(251,240,228,0.15); padding-block: 20px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 0.85rem; opacity: 0.7; }
@@ -948,7 +992,7 @@ h1 em, h2 em { color: var(--terracotta); }
 }
 
 /* dense marketplace rhythm for home rows */
-.row-section { padding-block: clamp(26px, 4vw, 46px) 0; }
+.row-section { padding-block: clamp(44px, 7vw, 80px) 0; }
 .row-section .section-head { margin-bottom: 18px; }
 
 /* ---------- wide promo tiles ---------- */
@@ -1070,13 +1114,17 @@ h1 em, h2 em { color: var(--terracotta); }
 .shelf-wrap { position: relative; }
 @media (hover: hover) { .shelf { cursor: grab; } .shelf.dragging { cursor: grabbing; scroll-snap-type: none; user-select: none; } }
 .shelf-arrow {
+  background-color: #fff; background-image: linear-gradient(var(--blue), var(--blue));
+  background-repeat: no-repeat; background-position: center bottom; background-size: 100% 0;
+  border-width: 2px 2px 4px 2px !important; border-style: solid; border-color: var(--ink);
+  transition: background-size 0.45s var(--ease), border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.2s ease !important;
   position: absolute; top: 38%; transform: translateY(-50%); z-index: 6;
   width: 42px; height: 42px; border-radius: 999px; border: 1px solid var(--line);
   background: rgba(253, 247, 238, 0.96); color: var(--ink);
   display: grid; place-items: center;
   transition: opacity 0.3s var(--ease), border-color 0.2s;
 }
-.shelf-arrow:hover { border-color: var(--ink); }
+.shelf-arrow:hover { background-size: 100% 100%; border-color: var(--mustard); box-shadow: 0 6px 16px rgba(38, 39, 43, 0.2); }
 .shelf-arrow.prev { inset-inline-start: -12px; }
 .shelf-arrow.next { inset-inline-end: -12px; }
 .shelf-arrow.off { opacity: 0; pointer-events: none; }
@@ -1092,7 +1140,7 @@ h1 em, h2 em { color: var(--terracotta); }
 }
 
 /* ---------- product photo marquee ---------- */
-.pmq { overflow: hidden; margin-top: clamp(20px, 3vw, 34px); }
+.pmq { overflow: clip; margin-top: clamp(20px, 3vw, 34px); }
 .pmq-rail { display: flex; width: max-content; animation: pmqSlide 45s linear infinite; }
 .pmq:hover .pmq-rail { animation-play-state: paused; }
 [dir='rtl'] .pmq-rail { animation-direction: reverse; }
@@ -1428,7 +1476,10 @@ h1 em, h2 em { color: var(--terracotta); }
 .form-err { margin-top: 12px; padding: 14px 16px; border-radius: 12px; background: var(--blush); color: var(--ink); font-size: 0.92rem; font-weight: 600; }
 .form-err p { margin: 0 0 10px; }
 .form-fallback { display: flex; flex-wrap: wrap; gap: 8px; }
-.hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+/* honeypot field: bounded off-screen technique — a physical -9999px offset
+   blows up the document's scrollable width under dir="rtl" (the classic
+   RTL + `left:-9999px` bug), so clip the box down to 1px instead of moving it. */
+.hp { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; opacity: 0; }
 .field-note { font-size: 0.82rem; color: var(--slate); font-weight: 600; }
 .field-err { font-size: 0.8rem; color: #96513C; font-weight: 700; }
 .field-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -1702,7 +1753,7 @@ h1 em, h2 em { color: var(--terracotta); }
   display: inline-grid; place-items: center; border-radius: 6px;
 }
 .mega-toggle svg { transition: transform 0.2s; }
-.mega-wrap.open .mega-toggle svg, .mega-wrap:hover .mega-toggle svg { transform: rotate(180deg); }
+.mega-wrap.open .mega-toggle svg { transform: rotate(180deg); }
 .mega {
   position: absolute; left: 0; right: 0; top: 100%;
   background: var(--paper); border-bottom: 1px solid var(--line); box-shadow: var(--shadow);
@@ -1710,7 +1761,7 @@ h1 em, h2 em { color: var(--terracotta); }
   transition: opacity 0.18s, transform 0.18s, visibility 0.18s;
   z-index: 60;
 }
-.mega-wrap.open .mega, .mega-wrap:hover .mega, .mega:focus-within {
+.mega-wrap.open .mega, .mega:focus-within {
   opacity: 1; visibility: visible; transform: translateY(0);
 }
 @media (prefers-reduced-motion: reduce) { .mega { transition: none; } }
@@ -1760,6 +1811,10 @@ h1 em, h2 em { color: var(--terracotta); }
 
 /* --- tabbed product rows ("Shop by product") --- */
 .tabbed-title { text-align: center; margin-bottom: 18px; }
+/* Citron grid rhythm: 4 cards desktop / 3 tablet / 1.25 mobile (peeking next card) */
+.tab-grid .shelf, .cs-content .shelf { grid-auto-columns: clamp(200px, 23%, 260px); gap: 20px; }
+@media (max-width: 1100px) { .tab-grid .shelf { grid-auto-columns: clamp(190px, 31%, 240px); } }
+@media (max-width: 700px) { .tab-grid .shelf, .cs-content .shelf { grid-auto-columns: 76%; gap: 14px; } }
 .tab-pills {
   display: flex; gap: 8px; justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto;
   padding-bottom: 6px; margin-bottom: 18px; scrollbar-width: none;
@@ -1767,11 +1822,20 @@ h1 em, h2 em { color: var(--terracotta); }
 .tab-pills::-webkit-scrollbar { display: none; }
 @media (min-width: 701px) { .tab-pills { justify-content: center; flex-wrap: wrap; overflow: visible; } }
 .tab-pill {
-  flex: 0 0 auto; border: 1.5px solid var(--ink); background: none; color: var(--ink);
-  border-radius: 999px; padding: 9px 18px; font-family: inherit; font-size: 0.88rem; font-weight: 700;
-  cursor: pointer; transition: background 0.15s, color 0.15s;
+  position: relative; overflow: hidden; isolation: isolate;
+  flex: 0 0 auto; border: 2px solid var(--ink); background: #fff; color: var(--ink);
+  border-radius: 999px; padding: 11px 22px; font-family: inherit; font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; transition: border-color 0.3s ease, color 0.3s ease, transform 0.3s var(--ease);
 }
-.tab-pill.on { background: var(--ink); color: var(--paper); }
+.tab-pill:hover { border-color: var(--mustard); transform: translateY(-1px); }
+.tab-pill:active { transform: translateY(1px); }
+.tab-wave {
+  position: absolute; left: -3px; right: -3px; bottom: -4px; height: 0; z-index: -1;
+  background: var(--blue); pointer-events: none; transition: height 0.5s var(--ease); border-radius: 3px;
+}
+.tab-pill:hover .tab-wave { height: calc(100% + 4px); }
+.tab-pill.on { background: var(--blue); border-color: var(--mustard); color: var(--ink); }
+.tab-pill.on .tab-wave { display: none; }
 .tab-more { text-align: center; margin-top: 22px; }
 .tab-more-link {
   font-weight: 800; font-size: 0.86rem; letter-spacing: 0.1em; text-transform: uppercase;
@@ -1830,7 +1894,7 @@ h1 em, h2 em { color: var(--terracotta); }
   color: var(--slate);
 }
 [dir='rtl'] .mcard-brand { letter-spacing: 0.02em; }
-.badge.new { background: var(--mustard); color: var(--ink); }
+.badge.new { background: var(--ink); color: var(--mustard); }
 .mcard-swatches { display: flex; gap: 4px; align-items: center; }
 .mcard-swatches i {
   width: 12px; height: 12px; border-radius: 50%; display: inline-block;
@@ -1899,3 +1963,120 @@ h1 em, h2 em { color: var(--terracotta); }
 [dir='rtl'] .cat-hero-copy small { letter-spacing: 0.03em; }
 .cat-hero-copy .shop-h1 { margin: 0; color: #fff; }
 .cat-hero-copy p { margin: 2px 0 0; font-weight: 600; font-size: 0.9rem; opacity: 0.92; }
+
+/* ===== Citron water-fill pill button — bottom-up ink fill on hover ===== */
+.wfb {
+  position: relative; overflow: hidden; isolation: isolate;
+  display: inline-flex; align-items: center; gap: 10px; white-space: nowrap;
+  border-radius: 999px; border: 2px solid var(--ink); border-bottom-width: 5px;
+  background: var(--blue); color: var(--ink); padding: 14px 28px 12px;
+  font-weight: 800; font-size: 0.95rem; font-family: var(--font-body);
+  transition: color 0.3s ease, transform 0.3s var(--ease), box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.wfb::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; background: var(--ink);
+  transform: scaleY(0); transform-origin: bottom; transition: transform 0.45s var(--ease);
+}
+.wfb:hover { color: var(--paper); transform: translateY(-2px); box-shadow: 0 10px 22px rgba(38, 39, 43, 0.22); }
+.wfb:hover::before { transform: scaleY(1); }
+.wfb:active { transform: translateY(0) scale(0.985); }
+.wfb .wfb-arrow { transition: transform 0.28s var(--ease); }
+.wfb:hover .wfb-arrow { transform: translateX(3px); }
+[dir='rtl'] .wfb:hover .wfb-arrow { transform: translateX(-3px); }
+@media (max-width: 749px) { .wfb { padding: 12px 22px 10px; font-size: 0.86rem; } }
+
+/* ===== Citron category-grid panel wrapper ===== */
+.cg-panel {
+  background: color-mix(in srgb, var(--blue) 38%, var(--paper-soft));
+  border-radius: 26px; padding: clamp(18px, 3vw, 40px);
+}
+.coltile-kicker {
+  display: block; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.09em;
+  text-transform: uppercase; color: rgba(255, 255, 255, 0.85); margin-bottom: 2px;
+}
+.coltile-media::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(105deg, transparent 32%, rgba(255, 255, 255, 0.4) 46%, transparent 62%);
+  transform: translateX(-130%);
+}
+.coltile:hover .coltile-media::before { transition: transform 1s var(--ease); transform: translateX(130%); }
+@media (max-width: 749px) { .cg-panel { border-radius: 18px; } }
+
+/* ===== Citron "Built tough" photo collage ===== */
+.bt-media { position: relative; padding: 22px 22px 12% 22px; }
+.bt-main { position: relative; width: 66%; }
+.bt-frame {
+  border: 7px solid var(--blush); background: var(--mustard); padding: 7px; border-radius: 34px;
+  transform: rotate(-2deg); transition: transform 0.6s var(--ease);
+}
+.bt-shot { position: relative; display: block; overflow: hidden; border-radius: 20px; background: var(--cream); line-height: 0; }
+.bt-shot img { display: block; width: 100%; height: auto; transition: transform 0.9s var(--ease); }
+.bt-sub {
+  position: absolute; inset-inline-end: 22px; bottom: 22px; width: 42%; z-index: 2;
+  transform: rotate(4deg); transition: transform 0.6s var(--ease);
+}
+.bt-sub .bt-shot { border: 7px solid var(--blue); border-radius: 27px; box-shadow: 0 12px 30px rgba(38, 39, 43, 0.18); }
+.bt-badge {
+  position: absolute; z-index: 3; top: 12%; inset-inline-start: 76%; width: 104px; height: 104px;
+  border-radius: 50%; display: grid; place-items: center; text-align: center;
+  background: var(--blush); color: var(--ink); border: 3px solid var(--ink); padding: 10px;
+  box-shadow: 0 8px 22px rgba(38, 39, 43, 0.2); transition: transform 0.55s var(--ease);
+}
+.bt-badge span { font-size: 0.72rem; line-height: 1.3; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; }
+.why-band:hover .bt-frame { transform: rotate(0deg); }
+.why-band:hover .bt-sub { transform: rotate(1deg) translateY(-5px); }
+.why-band:hover .bt-badge { transform: rotate(-10deg) scale(1.07); }
+.why-band:hover .bt-shot img { transform: scale(1.05); }
+@media (max-width: 900px) {
+  .bt-media { padding: 14px 14px 16% 14px; }
+  .bt-badge { width: 80px; height: 80px; font-size: 0; }
+  .bt-badge span { font-size: 0.6rem; }
+}
+
+/* ===== Citron testimonials slider — tilt cards + progress dots ===== */
+.tm-track {
+  display: flex; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth;
+  padding: 10px 2px 18px; scrollbar-width: none; margin: 0 -2px;
+}
+.tm-track::-webkit-scrollbar { display: none; }
+.tm-cardwrap { flex: 0 0 calc((100% - 2 * 20px) / 3); max-width: calc((100% - 2 * 20px) / 3); scroll-snap-align: start; box-sizing: border-box; }
+.tm-cardwrap:nth-child(3n+1) .review { transform: rotate(-2deg); }
+.tm-cardwrap:nth-child(3n+2) .review { transform: rotate(0deg); }
+.tm-cardwrap:nth-child(3n) .review { transform: rotate(2deg); }
+.review { transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease); }
+.review:hover { transform: translateY(-6px) !important; box-shadow: 0 16px 34px rgba(38, 39, 43, 0.16); }
+.review-who { border-top: 1.5px dashed rgba(38, 39, 43, 0.3); padding-top: 12px; margin-top: 6px; display: flex !important; align-items: center; gap: 10px; }
+.review .review-avatar {
+  flex: 0 0 auto; width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--ink);
+  display: grid; place-items: center; font-weight: 800; font-size: 0.85rem; color: var(--ink);
+  text-transform: uppercase; line-height: 1;
+}
+.review .review-name-line { display: block; font-weight: 800; color: var(--ink); font-size: 0.9rem; }
+.tm-dots { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 18px; }
+.tm-dot {
+  appearance: none; cursor: pointer; width: 12px; height: 12px; border-radius: 50%; padding: 0;
+  border: 2px solid var(--ink); background: transparent; transition: background-color 0.25s ease, transform 0.25s var(--ease);
+}
+.tm-dot:hover { transform: scale(1.18); }
+.tm-dot.on { background: var(--ink); }
+@media (max-width: 900px) { .tm-cardwrap { flex-basis: calc((100% - 20px) / 2); max-width: calc((100% - 20px) / 2); } }
+@media (max-width: 620px) { .tm-cardwrap { flex-basis: 88%; max-width: 88%; } .tm-cardwrap .review { transform: none !important; } }
+
+/* ===== Citron collection-split — photo + product slider ===== */
+.cs-wrap { display: grid; grid-template-columns: minmax(0, 36fr) minmax(0, 64fr); gap: 44px; align-items: center; }
+.cs-media, .cs-content { min-width: 0; }
+.cs-media { position: relative; overflow: hidden; border-radius: 16px; background: var(--cream); line-height: 0; }
+.cs-media img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.9s var(--ease); }
+.cs-media:hover img { transform: scale(1.05); }
+@media (max-width: 900px) {
+  .cs-wrap { grid-template-columns: 1fr; gap: 22px; }
+  .cs-media { aspect-ratio: 4 / 3; order: 1; }
+  .cs-content { order: 2; text-align: center; }
+}
+
+/* ===== Citron newsletter band — full-bleed tint ===== */
+.nl-band {
+  background: color-mix(in srgb, var(--blue) 46%, var(--paper-soft));
+  border-radius: var(--radius); text-align: center; padding: clamp(30px, 5vw, 52px);
+}
+.nl-band .inline-form { justify-content: center; }

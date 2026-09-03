@@ -68,16 +68,18 @@ export default function Footer({ dict, locale, collections = [] }) {
           <p className="footer-arabic">{dict.footer.arabicName}</p>
         </div>
         {cols.map((col) => (
-          <nav key={col.title} className="footer-col" aria-label={col.title}>
-            <h3>{col.title}</h3>
-            {col.links.map((l) =>
-              l.ext ? (
-                <a key={l.label} href={l.href} target="_blank" rel="noreferrer">{l.label}</a>
-              ) : (
-                <Link key={l.label} href={l.href}>{l.label}</Link>
-              )
-            )}
-          </nav>
+          <details key={col.title} className="footer-col" open>
+            <summary aria-label={col.title}><h3>{col.title}</h3></summary>
+            <nav className="footer-col-links" aria-label={col.title}>
+              {col.links.map((l) =>
+                l.ext ? (
+                  <a key={l.label} href={l.href} target="_blank" rel="noreferrer">{l.label}</a>
+                ) : (
+                  <Link key={l.label} href={l.href}>{l.label}</Link>
+                )
+              )}
+            </nav>
+          </details>
         ))}
       </div>
 

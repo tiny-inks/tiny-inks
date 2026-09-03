@@ -13,7 +13,7 @@ for (const locale of LOCALES) {
       const order = [
         '.carousel', '.usp-bar', '.tabbed', '#best-sellers', '#new-arrivals', '#gift-sets',
         '#why-band', '#brands', '#offers', '.video-loop', '.pmq', '.color-strip',
-        '.price-chips', '.gift-tiles', '.bulk-band', '.faq-list', '#reviews .cards-3',
+        '.price-chips', '.gift-tiles', '.bulk-band', '.faq-list', '#reviews .tm-track',
         '#newsletter', '.ig-strip',
       ];
       let lastTop = -1;

@@ -8,6 +8,7 @@ import PhotoFrame from '@/components/PhotoFrame';
 import Shelf from '@/components/Shelf';
 import UspBar from '@/components/UspBar';
 import TabbedRows from '@/components/TabbedRows';
+import ReviewsSlider from '@/components/ReviewsSlider';
 import { ShopByColor, ShopByPrice, GiftFinder, BulkBand, FaqShort } from '@/components/HomeSections';
 import { RecentlyViewedRow } from '@/components/RecentlyViewed';
 import { NewsletterForm } from '@/components/Forms';
@@ -136,25 +137,56 @@ export default async function Home({ params }) {
         dict={dict}
       />
 
-      {/* 5 — gift sets */}
+      {/* 5 — gift sets, Citron "collection split": feature photo + product slider */}
       {bundles.length > 0 && (
-        <ProductRow
-          id="gift-sets"
-          eyebrow={dict.home.bundlesEyebrow}
-          title={dict.home.bundlesTitle}
-          cta={dict.home.bundlesCta}
-          href={`/${locale}/bundles`}
-          products={bundles}
-          locale={locale}
-          dict={dict}
-        />
+        <section className="section row-section" id="gift-sets">
+          <div className="wrap cs-wrap">
+            <Reveal>
+              <div className="cs-media">
+                <img src="/products/gift-sets-bundles-4.webp" alt="" loading="lazy" />
+              </div>
+            </Reveal>
+            <div className="cs-content">
+              <Reveal>
+                {dict.home.bundlesEyebrow ? <div className="eyebrow">{dict.home.bundlesEyebrow}</div> : null}
+                <h2>{dict.home.bundlesTitle}</h2>
+              </Reveal>
+              <Reveal>
+                <Shelf ariaLabel={dict.home.bundlesTitle}>
+                  {withGridImages(bundles).map(([p, image]) => (
+                    <ProductCard key={p.id} product={p} locale={locale} dict={dict} image={image} />
+                  ))}
+                </Shelf>
+              </Reveal>
+              <Reveal>
+                <Link href={`/${locale}/bundles`} className="btn btn-ghost btn-sm" style={{ marginTop: 12 }}>
+                  {dict.home.bundlesCta} <span className="arrow" aria-hidden="true">→</span>
+                </Link>
+              </Reveal>
+            </div>
+          </div>
+        </section>
       )}
 
-      {/* 5b — why buy from us (image + bullets, Citron "built tough" pattern) */}
+      {/* 5b — why buy from us (two-photo collage + sticker badge, Citron "built tough" pattern) */}
       <section className="section row-section" id="why-band">
         <div className="wrap why-band">
-          <div className="why-band-media">
-            <img src="/products/learning-activity-4.webp" alt="" loading="lazy" />
+          <div className="why-band-media bt-media">
+            <div className="bt-main">
+              <div className="bt-frame">
+                <div className="bt-shot">
+                  <img src="/products/learning-activity-4.webp" alt="" loading="lazy" />
+                </div>
+              </div>
+              <div className="bt-badge">
+                <span>{dict.whyBand.bullets[1]?.t}</span>
+              </div>
+            </div>
+            <div className="bt-sub">
+              <div className="bt-shot">
+                <img src="/products/desk-tools-3.webp" alt="" loading="lazy" />
+              </div>
+            </div>
           </div>
           <div className="why-band-copy">
             <h2>{dict.whyBand.title}</h2>
@@ -224,20 +256,27 @@ export default async function Home({ params }) {
       <section className="section row-section" id="reviews">
         <div className="wrap">
           <Reveal><h2>{dict.home.reviewsTitle}</h2></Reveal>
-          <div className="cards-3" style={{ marginTop: 22 }}>
-            {reviews.map((r, i) => (
-              <Reveal key={i} delay={i * 0.08}>
-                <div className="review">
-                  <div className="review-head">
-                    <div className="stars">★★★★★</div>
-                    <span className="review-verified">✓ {dict.reviewsUi.verified}</span>
+          <div style={{ marginTop: 22 }}>
+            <ReviewsSlider ariaLabel={dict.home.reviewsTitle}>
+              {reviews.map((r, i) => (
+                <Reveal key={i} delay={i * 0.08}>
+                  <div className="review">
+                    <div className="review-head">
+                      <div className="stars">★★★★★</div>
+                      <span className="review-verified">✓ {dict.reviewsUi.verified}</span>
+                    </div>
+                    <p>“{r.q}”</p>
+                    <div className="review-who">
+                      <span className="review-avatar" aria-hidden="true">{r.name[0]}</span>
+                      <span>
+                        <span className="review-name-line">{r.name} · {r.city}</span>
+                        <span className="review-bought">{dict.reviewsUi.bought}: {r.product}</span>
+                      </span>
+                    </div>
                   </div>
-                  <p>“{r.q}”</p>
-                  <span className="review-who">{r.name} · {r.city}</span>
-                  <span className="review-bought">{dict.reviewsUi.bought}: {r.product}</span>
-                </div>
-              </Reveal>
-            ))}
+                </Reveal>
+              ))}
+            </ReviewsSlider>
           </div>
         </div>
       </section>
@@ -246,7 +285,7 @@ export default async function Home({ params }) {
       <section className="section row-section" id="newsletter">
         <div className="wrap">
           <Reveal>
-            <div className="block cream grain" style={{ textAlign: 'center' }}>
+            <div className="block nl-band" style={{ textAlign: 'center' }}>
               <h2>{dict.home.newsTitle}</h2>
               <p className="lede" style={{ margin: '0 auto 26px' }}>{dict.home.newsLede}</p>
               <div style={{ display: 'flex', justifyContent: 'center' }}>

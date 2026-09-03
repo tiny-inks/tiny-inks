@@ -15,7 +15,6 @@ export default function Header({ dict, locale, collections = [], brands = [] }) 
   const [menu, setMenu] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
-  const [announceIdx, setAnnounceIdx] = useState(0);
   const [term, setTerm] = useState('');
   const pathname = usePathname();
   const router = useRouter();
@@ -23,12 +22,6 @@ export default function Header({ dict, locale, collections = [], brands = [] }) 
   const wishlist = useWishlist();
   const mobileInput = useRef(null);
   const megaRef = useRef(null);
-
-  useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const id = setInterval(() => setAnnounceIdx((i) => (i + 1) % dict.announce.length), 4000);
-    return () => clearInterval(id);
-  }, [dict.announce.length]);
 
   /* route change closes everything */
   useEffect(() => { setMenu(false); setSearchOpen(false); setMegaOpen(false); }, [pathname]);
@@ -136,8 +129,21 @@ export default function Header({ dict, locale, collections = [], brands = [] }) 
 
   return (
     <>
-      <div className="announce" role="status">
-        <span key={announceIdx} className="announce-text">✦ {dict.announce[announceIdx]}</span>
+      {/* Citron-style time-driven CSS marquee: two identical copies scroll -50%, pauses on hover/focus */}
+      <div className="announce" role="status" aria-label="Announcements">
+        <div className="announce-track">
+          {[0, 1].map((copy) => (
+            <div className="announce-group" key={copy} aria-hidden={copy === 1}>
+              {dict.announce.map((msg, i) => (
+                <span className="announce-item" key={i}>
+                  ✦ {msg}
+                  {i < dict.announce.length - 1 && <span className="announce-sep" aria-hidden="true">•</span>}
+                </span>
+              ))}
+              <span className="announce-sep" aria-hidden="true">•</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       <header className={`header mk-header ${menu ? 'menu-open' : ''}`}>
@@ -242,6 +248,15 @@ export default function Header({ dict, locale, collections = [], brands = [] }) 
         <div id="site-search-row" className={`hdr-search wrap ${searchOpen ? 'open' : ''}`} hidden={!searchOpen}>
           {searchForm('mk-search-mobile', mobileInput)}
         </div>
+
+        {/* backdrop behind the slide-in phone menu — click closes */}
+        <button
+          type="button"
+          className={`mk-backdrop ${menu ? 'open' : ''}`}
+          aria-hidden={!menu}
+          tabIndex={-1}
+          onClick={() => setMenu(false)}
+        />
 
         {/* phone menu — 5 links + the Shop groups as accordions */}
         <nav id="site-menu" className={`mk-drawer ${menu ? 'open' : ''}`} aria-label="Main" aria-hidden={!menu}>

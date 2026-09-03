@@ -24,19 +24,16 @@ export default function Reveal({ children, delay = 0, stagger = false, className
       el.style.transitionDelay = `${delay}s`;
     }
     el.classList.add('armed');
+    const reveal = () => { el.classList.add('in'); io.disconnect(); clearTimeout(fallback); };
     const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            el.classList.add('in');
-            io.disconnect();
-          }
-        });
-      },
-      { threshold: 0.12 }
+      (entries) => { entries.forEach((entry) => { if (entry.isIntersecting) reveal(); }); },
+      { threshold: 0, rootMargin: '0px 0px -10% 0px' }
     );
     io.observe(el);
-    return () => io.disconnect();
+    // safety net: fast/discrete scrolling (or an odd IO edge case) can skip the
+    // crossing entirely — never leave a section permanently invisible.
+    const fallback = setTimeout(reveal, 2500);
+    return () => { io.disconnect(); clearTimeout(fallback); };
   }, [delay, stagger]);
 
   return (
