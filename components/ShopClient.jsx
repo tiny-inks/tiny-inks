@@ -7,6 +7,7 @@ import ProductCard from './ProductCard';
 import EmptyState from './EmptyState';
 import { assignGridImages } from '@/lib/product-images';
 import { COLOR_SWATCHES, COLOR_NAMES } from '@/lib/mock-data';
+import { getBusiness } from '@/lib/site';
 
 const PER_PAGE_OPTIONS = [12, 24, 48];
 
@@ -35,9 +36,11 @@ export default function ShopClient({
   const [maxDraft, setMaxDraft] = useState(() => searchParams.get('max') || '');
   const [inStockOnly, setInStockOnly] = useState(() => searchParams.get('avail') === '1');
   const [sort, setSort] = useState(() => searchParams.get('sort') || 'featured');
+  const [quick, setQuick] = useState(() => searchParams.get('quick') || 'all');
   const [perPage, setPerPage] = useState(12);
   const [visible, setVisible] = useState(12);
   const [panelOpen, setPanelOpen] = useState(false);
+  const b = getBusiness();
 
   /* write state back to the URL (replace, no scroll, no history spam) */
   const firstRun = useRef(true);
@@ -52,11 +55,12 @@ export default function ShopClient({
     if (maxP) p.set('max', maxP);
     if (inStockOnly) p.set('avail', '1');
     if (sort !== 'featured') p.set('sort', sort);
+    if (quick !== 'all') p.set('quick', quick);
     const qs = p.toString();
     router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false });
-  }, [query, type, color, brand, minP, maxP, inStockOnly, sort, pathname, router]);
+  }, [query, type, color, brand, minP, maxP, inStockOnly, sort, quick, pathname, router]);
 
-  useEffect(() => { setVisible(perPage); }, [perPage, query, type, color, brand, minP, maxP, inStockOnly, sort]);
+  useEffect(() => { setVisible(perPage); }, [perPage, query, type, color, brand, minP, maxP, inStockOnly, sort, quick]);
 
   /* bottom sheet behavior on mobile */
   useEffect(() => {
@@ -103,6 +107,9 @@ export default function ShopClient({
       if (min !== null && p.price < min) return false;
       if (max !== null && p.price > max) return false;
       if (inStockOnly && !p.available) return false;
+      if (quick === 'new' && !p.tags?.includes('new')) return false;
+      if (quick === 'best' && !p.tags?.includes('bestseller')) return false;
+      if (quick === 'gifts' && !p.tags?.includes('bundle') && !p.collections?.includes('gift-sets')) return false;
       return true;
     });
     if (sort === 'low') list = [...list].sort((a, b) => a.price - b.price);
@@ -112,7 +119,7 @@ export default function ShopClient({
       list = [...list].sort((a, b) => (b.tags?.includes('bestseller') ? 1 : 0) - (a.tags?.includes('bestseller') ? 1 : 0));
     }
     return list;
-  }, [products, type, color, brand, minP, maxP, inStockOnly, sort, query]);
+  }, [products, type, color, brand, minP, maxP, inStockOnly, sort, query, quick]);
 
   const shown = filtered.slice(0, visible);
 
@@ -130,8 +137,15 @@ export default function ShopClient({
   const clearAll = () => {
     setQuery(''); setType('all'); setColor('all'); setBrand('all');
     setMinP(''); setMaxP(''); setMinDraft(''); setMaxDraft('');
-    setInStockOnly(false);
+    setInStockOnly(false); setQuick('all');
   };
+
+  const QUICK_FILTERS = [
+    { key: 'all', label: t.quickAll },
+    { key: 'new', label: t.quickNew },
+    { key: 'best', label: t.quickBest },
+    { key: 'gifts', label: t.quickGifts },
+  ];
 
   const applyPrice = (e) => { e.preventDefault(); setMinP(minDraft); setMaxP(maxDraft); };
 
@@ -208,7 +222,42 @@ export default function ShopClient({
   const gridImages = assignGridImages(shown);
 
   return (
-    <div className="grid gap-12 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-14">
+    <div>
+      {/* quick filters + search — always visible, feeds the same state as the sidebar */}
+      <div className="mb-8 flex flex-wrap gap-2">
+        {QUICK_FILTERS.map((q) => (
+          <button
+            key={q.key}
+            type="button"
+            onClick={() => setQuick(q.key)}
+            data-testid={`quick-${q.key}`}
+            className={`rounded-full border-[1.5px] px-5 py-2.5 text-[0.72rem] font-extrabold uppercase tracking-[0.1em] transition-all duration-300 ${quick === q.key ? 'border-ink bg-ink text-white' : 'border-ink/30 bg-card text-ink hover:border-ink hover:bg-sun'}`}
+          >
+            {q.label}
+          </button>
+        ))}
+        <a
+          href={`${b.whatsappHref}?text=${encodeURIComponent(dict.footerUi.bulkMsg)}`}
+          target="_blank"
+          rel="noreferrer"
+          className="rounded-full border-[1.5px] border-ink/30 bg-card px-5 py-2.5 text-[0.72rem] font-extrabold uppercase tracking-[0.1em] text-ink transition-all duration-300 hover:border-ink hover:bg-sun"
+        >
+          {t.quickBulk}
+        </a>
+      </div>
+      <div className="relative mb-8 max-w-md">
+        <Search className="pointer-events-none absolute start-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" strokeWidth={1.8} />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={dict.search.placeholder}
+          aria-label={dict.search.label}
+          data-testid="shop-search"
+          className="w-full rounded-full border-[1.5px] border-border bg-card py-3.5 ps-11 pe-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-coral"
+        />
+      </div>
+
+      <div className="grid gap-12 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-14">
       <aside className="hidden lg:block">
         <div className="sticky top-28 rounded-3xl border border-border bg-card p-6">
           {filterPanel}
@@ -302,5 +351,6 @@ export default function ShopClient({
         </div>
       </div>
     </div>
+  </div>
   );
 }
