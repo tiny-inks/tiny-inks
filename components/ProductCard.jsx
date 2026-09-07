@@ -30,11 +30,17 @@ export default function ProductCard({ product, locale, dict, image, index = 0 })
       className="group flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card p-2.5 transition-all duration-500 hover:-translate-y-1 hover:border-ink hover:shadow-[0_18px_40px_-24px_rgba(30,45,90,0.45)] sm:p-3"
       style={{ transitionDelay: `${(index % 4) * 60}ms` }}
     >
-      <div className="relative block overflow-hidden rounded-2xl bg-secondary">
-        <Link href={href} aria-label={product.title} className="block">
+      {/* aspect-square lives on THIS wrapper, not just the <img>, because
+          Placeholder's root is position: absolute — it never contributes
+          height to its own parent. Without the ratio pinned here, any
+          product with no real image collapses this box to 0px tall and the
+          title/price block below renders straight on top of the
+          placeholder's own title (looked like the card "duplicating"). */}
+      <div className="relative block aspect-square overflow-hidden rounded-2xl bg-secondary">
+        <Link href={href} aria-label={product.title} className="block h-full w-full">
           {img?.url ? (
             <img
-              className={`aspect-square w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.05] ${img.fallback ? 'is-fallback' : ''}`}
+              className={`h-full w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.05] ${img.fallback ? 'is-fallback' : ''}`}
               src={img.url}
               alt={product.title}
               loading="lazy"

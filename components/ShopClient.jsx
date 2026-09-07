@@ -156,22 +156,28 @@ export default function ShopClient({
   const applyPrice = (e) => { e.preventDefault(); setMinP(minDraft); setMaxP(maxDraft); };
 
   const FilterGroup = ({ title, children }) => (
-    <div>
+    <div className="min-w-0">
       <h3 className="eyebrow-new">{title}</h3>
-      <div className="mt-4">{children}</div>
+      <div className="mt-4 min-w-0">{children}</div>
     </div>
   );
 
-  const catLink = (active) => `flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-start text-sm font-semibold transition-colors duration-300 ${active ? 'bg-ink text-white' : 'text-foreground/75 hover:bg-secondary'}`;
+  /* min-w-0 matters here: a flex row's default min-width is its content's
+     min-content size, not 0 — without it, one long category/brand name
+     refuses to shrink and blows the whole 260px sidebar column out to
+     however wide that word is, dragging every sibling row (and their count
+     badges) out with it. That's what was reading as stray numbers floating
+     into the product grid. */
+  const catLink = (active) => `flex min-w-0 w-full items-center justify-between rounded-xl px-3 py-2.5 text-start text-sm font-semibold transition-colors duration-300 ${active ? 'bg-ink text-white' : 'text-foreground/75 hover:bg-secondary'}`;
 
   const filterPanel = (
-    <div className="grid gap-8">
+    <div className="grid min-w-0 gap-8">
       <FilterGroup title={tu.categories}>
         <div className="space-y-2">
           <Link href={`/${locale}/shop`} className={catLink(!currentCollection)} aria-current={!currentCollection ? 'page' : undefined}>{t.all}</Link>
           {collections.map((c) => (
             <Link key={c.handle} href={`/${locale}/shop/${c.handle}`} className={catLink(currentCollection === c.handle)} aria-current={currentCollection === c.handle ? 'page' : undefined}>
-              <span>{c.title}</span>{typeof c.count === 'number' ? <span className="text-xs opacity-70">{c.count}</span> : null}
+              <span className="truncate">{c.title}</span>{typeof c.count === 'number' ? <span className="shrink-0 text-xs opacity-70">{c.count}</span> : null}
             </Link>
           ))}
         </div>

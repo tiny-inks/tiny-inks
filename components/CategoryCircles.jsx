@@ -1,14 +1,15 @@
 import Link from 'next/link';
 import { collectionTileImage } from './CollectionGrid';
 
-/* Lovable-style horizontally-scrolling circle nav to real collections. */
+/* Circle nav to real collections — wraps to new lines instead of scrolling,
+   so every category is visible at once with no scroll container/arrows. */
 export default function CategoryCircles({ collections, locale }) {
   return (
-    <div className="mt-8 flex snap-x gap-5 overflow-x-auto pb-2 sm:justify-center sm:gap-9">
+    <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-8 sm:gap-x-9">
       {collections.slice(0, 9).map((c) => {
         const img = collectionTileImage(c);
         return (
-          <Link key={c.handle} href={`/${locale}/shop/${c.handle}`} className="group flex w-[104px] shrink-0 snap-start flex-col items-center gap-3 sm:w-[136px]">
+          <Link key={c.handle} href={`/${locale}/shop/${c.handle}`} className="group flex w-[104px] shrink-0 flex-col items-center gap-3 sm:w-[136px]">
             <span className="overflow-hidden rounded-full border-[3px] border-secondary p-1 transition-colors group-hover:border-coral">
               {img ? (
                 <img src={img.url} alt={c.title} loading="lazy" className="h-[86px] w-[86px] rounded-full object-cover transition-transform duration-700 group-hover:scale-110 sm:h-[118px] sm:w-[118px]" />
