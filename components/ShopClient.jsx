@@ -10,6 +10,11 @@ import { COLOR_SWATCHES, COLOR_NAMES } from '@/lib/mock-data';
 import { getBusiness } from '@/lib/site';
 
 const PER_PAGE_OPTIONS = [12, 24, 48];
+/* a catalog this size (300+ SKUs) can have 40+ distinct vendors — listing
+   every single one as a full-width sidebar row pushed the sidebar far
+   taller than the product grid and read as broken. Cap the default list and
+   let people opt into the rest. */
+const BRAND_VISIBLE_CAP = 8;
 
 export default function ShopClient({
   products,
@@ -40,6 +45,7 @@ export default function ShopClient({
   const [perPage, setPerPage] = useState(12);
   const [visible, setVisible] = useState(12);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [showAllBrands, setShowAllBrands] = useState(false);
   const b = getBusiness();
 
   /* write state back to the URL (replace, no scroll, no history spam) */
@@ -182,14 +188,19 @@ export default function ShopClient({
 
       {brands.length > 1 && (
         <FilterGroup title={tu.brand}>
-          <div className="space-y-2">
+          <div className="max-h-80 space-y-2 overflow-y-auto pe-1">
             <button type="button" className={catLink(brand === 'all')} onClick={() => setBrand('all')}>{t.all}</button>
-            {brands.map((b) => (
-              <button key={b.name} type="button" className={catLink(brand === b.name)} onClick={() => setBrand(b.name)}>
-                <span>{b.name}</span><span className="text-xs opacity-70">{b.count}</span>
+            {(showAllBrands || brand !== 'all' ? brands : brands.slice(0, BRAND_VISIBLE_CAP)).map((bnd) => (
+              <button key={bnd.name} type="button" className={catLink(brand === bnd.name)} onClick={() => setBrand(bnd.name)}>
+                <span className="truncate">{bnd.name}</span><span className="shrink-0 text-xs opacity-70">{bnd.count}</span>
               </button>
             ))}
           </div>
+          {!showAllBrands && brand === 'all' && brands.length > BRAND_VISIBLE_CAP && (
+            <button type="button" onClick={() => setShowAllBrands(true)} className="mt-2 text-[0.7rem] font-extrabold uppercase tracking-[0.12em] underline underline-offset-4">
+              {tu.showAllBrands} ({brands.length - BRAND_VISIBLE_CAP} {tu.more})
+            </button>
+          )}
         </FilterGroup>
       )}
 

@@ -258,7 +258,7 @@ body:not(.brand-new) {
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 [id] { scroll-margin-top: calc(var(--header-h) + 16px); }
 body {
   margin: 0;
@@ -268,6 +268,12 @@ body {
   font-size: 17px;
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
+  /* hard stop for the page-level horizontal scrollbar — any child that
+     overflows (marquee tracks, wide sidebars, unwrapped filter lists) gets
+     clipped here instead of widening the whole document. Children that need
+     their own horizontal scroll (shelves, chip rows) already set their own
+     overflow-x: auto above, so this only catches accidental page overflow. */
+  overflow-x: hidden;
 }
 img { max-width: 100%; display: block; }
 /* scoped away from body.brand-new — see the --font-display comment above for
