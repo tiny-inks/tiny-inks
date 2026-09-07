@@ -8,19 +8,23 @@ export default function AddToCart({ product, dict }) {
   const [added, setAdded] = useState(false);
 
   if (!product.available) {
-    return <button className="btn" disabled style={{ opacity: 0.5 }}>{dict.product.soldout}</button>;
+    return (
+      <button type="button" disabled className="cursor-not-allowed rounded-full border-[1.5px] border-border px-8 py-3.5 text-[0.72rem] font-extrabold uppercase tracking-[0.12em] text-muted-foreground">
+        {dict.product.soldout}
+      </button>
+    );
   }
 
   return (
-    <div className="buy-row">
-      <div className="qty" aria-label={dict.product.qty}>
-        <button onClick={() => setQty(Math.max(1, qty - 1))} aria-label="-">−</button>
-        <span>{qty}</span>
-        <button onClick={() => setQty(qty + 1)} aria-label="+">+</button>
+    <>
+      <div className="inline-flex shrink-0 items-center rounded-full border-[1.5px] border-ink" aria-label={dict.product.qty}>
+        <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} aria-label="-" className="grid h-11 w-11 place-items-center text-lg font-extrabold">−</button>
+        <span className="min-w-[2rem] text-center text-sm font-extrabold tabular-nums">{qty}</span>
+        <button type="button" onClick={() => setQty(qty + 1)} aria-label="+" className="grid h-11 w-11 place-items-center text-lg font-extrabold">+</button>
       </div>
       <button
-        className="btn btn-primary"
-        style={{ flex: 1, minWidth: 180 }}
+        type="button"
+        className={`min-w-[180px] flex-1 rounded-full border-[1.5px] py-3.5 text-[0.72rem] font-extrabold uppercase tracking-[0.12em] transition-colors duration-300 ${added ? 'border-sage bg-sage text-ink' : 'border-ink bg-ink text-white hover:bg-coral hover:border-coral'}`}
         onClick={async () => {
           await cart.add(product, qty);
           setAdded(true);
@@ -29,6 +33,6 @@ export default function AddToCart({ product, dict }) {
       >
         {added ? dict.product.added : dict.product.add}
       </button>
-    </div>
+    </>
   );
 }

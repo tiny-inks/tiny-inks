@@ -11,7 +11,7 @@ export default function WishlistClient({ products, dict, locale, collections = [
   if (saved.length === 0) {
     return (
       <div className="mx-auto max-w-xl">
-        <EmptyState dict={dict} locale={locale} collections={collections} title={dict.cartUi.empty} cta={dict.cartUi.emptyCta} ctaHref={`/${locale}/shop`} />
+        <EmptyState dict={dict} locale={locale} collections={collections} title={dict.cartUi.wishlistEmpty} cta={dict.cartUi.emptyCta} ctaHref={`/${locale}/shop`} />
       </div>
     );
   }

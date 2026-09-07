@@ -26,8 +26,15 @@ export default function Gallery({ images, title, handle, noImageLabel }) {
       {list.length > 1 && (
         <div className="pdp-thumbs">
           {list.map((img, i) => (
-            <button key={i} className={i === idx ? 'on' : ''} onClick={() => setIdx(i)} aria-label={`Image ${i + 1}`}>
-              <img src={img.url} alt="" loading="lazy" />
+            <button
+              key={i}
+              type="button"
+              onClick={() => setIdx(i)}
+              aria-label={`Image ${i + 1}`}
+              aria-current={i === idx}
+              className={`aspect-square w-[76px] shrink-0 overflow-hidden rounded-xl border-2 ${i === idx ? 'border-coral' : 'border-transparent'}`}
+            >
+              <img src={img.url} alt="" loading="lazy" className="h-full w-full object-cover" />
             </button>
           ))}
         </div>
