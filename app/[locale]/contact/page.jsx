@@ -1,4 +1,4 @@
-import { Clock, Instagram, Mail, MapPin, Send } from 'lucide-react';
+import { ArrowRight, Clock, Instagram, Mail, MapPin, Send } from 'lucide-react';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { ContactForm } from '@/components/Forms';
 import { getDict } from '@/lib/dictionaries';
@@ -53,6 +53,27 @@ export default function ContactPage({ params }) {
               )}
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Map — real Google Maps listing for the Abu Dhabi shop */}
+      <section className="mx-auto max-w-[1240px] px-5 pb-14 sm:px-8 sm:pb-20">
+        <div className="relative overflow-hidden rounded-3xl border border-border bg-secondary shadow-sm">
+          <iframe
+            title="Tiny Inks location in Abu Dhabi"
+            src={b.mapEmbedSrc}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            className="h-[380px] w-full sm:h-[460px]"
+          />
+          <div className="absolute inset-x-3 bottom-3 max-w-sm rounded-2xl bg-card/95 p-5 shadow-xl backdrop-blur-sm sm:bottom-6 sm:start-6 sm:end-auto">
+            <span className="eyebrow-new">{t.mapFindUs}</span>
+            <p className="mt-2 font-display text-xl leading-tight">{dict.brand}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{b.address || t.addressFallback}</p>
+            <a href={b.mapsHref} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-coral">
+              {t.mapOpenGoogle} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+            </a>
+          </div>
         </div>
       </section>
 

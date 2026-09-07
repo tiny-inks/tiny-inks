@@ -2,13 +2,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Check, LocateFixed, ShoppingBag } from 'lucide-react';
+import { LocateFixed, ShoppingBag } from 'lucide-react';
 import { useCart } from '../CartContext';
 
-/* On-site checkout: contact → address → delivery method → payment.
-   Prices always come from /api/checkout/quote (server recomputes from Shopify);
-   the browser only ever sends variant ids + quantities. Payment Element renders
-   cards + Apple Pay + Google Pay; 3-D Secure is handled by confirmPayment. */
+/* On-site checkout: one page — contact, delivery, payment — matching the
+   Lovable reference design (no step wizard). Prices always come from
+   /api/checkout/quote (server recomputes from Shopify); the browser only
+   ever sends variant ids + quantities. Payment Element renders cards + Apple
+   Pay + Google Pay once contact + address are valid; 3-D Secure is handled
+   by confirmPayment. */
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^[+\d][\d\s()-]{6,}$/;
 const fmt = (fils, locale, currency = 'AED') =>
@@ -38,12 +40,19 @@ const codKey = () => {
 
 const field = 'mt-2 w-full rounded-2xl border-2 border-border bg-card px-4 py-3 text-sm outline-none transition-colors focus:border-coral';
 
+function Card({ eyebrow, children }) {
+  return (
+    <div className="rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-8">
+      <span className="eyebrow-new">{eyebrow}</span>
+      <div className="mt-5">{children}</div>
+    </div>
+  );
+}
+
 export default function CheckoutClient({ dict, locale, business }) {
   const t = dict.checkout;
   const router = useRouter();
   const cart = useCart();
-  const topRef = useRef(null);
-  const [step, setStep] = useState(1);
   const [status, setStatus] = useState(null); // GET /api/checkout/quote
   const [quote, setQuote] = useState(null);
   const [quoteErr, setQuoteErr] = useState(null);
@@ -57,6 +66,7 @@ export default function CheckoutClient({ dict, locale, business }) {
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState('');
   const [stripeReady, setStripeReady] = useState(false);
+  const [stripeMounted, setStripeMounted] = useState(false);
   const stripeRef = useRef({});
 
   const d = cart.delivery;
@@ -99,6 +109,7 @@ export default function CheckoutClient({ dict, locale, business }) {
   };
   const contactOk = d.name.trim() && EMAIL_RE.test(email.trim()) && PHONE_RE.test(d.phone.trim());
   const addressOk = method === 'collect' || d.address.trim().length > 5;
+  const readyToPay = contactOk && addressOk && !!quote;
 
   const setD = (k) => (e) => cart.setDelivery({ ...d, [k]: e.target.value });
   const blur = (k) => () => setTouched((s) => ({ ...s, [k]: true }));
@@ -125,8 +136,6 @@ export default function CheckoutClient({ dict, locale, business }) {
     );
   };
 
-  const goto = (n) => { setStep(n); setQuoteOpen(false); setPayError(''); setTimeout(() => topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30); };
-
   const payloadBody = () => ({
     items, method,
     contact: { name: d.name.trim(), email: email.trim(), phone: d.phone.trim() },
@@ -134,7 +143,9 @@ export default function CheckoutClient({ dict, locale, business }) {
     note, locale,
   });
 
-  /* ---- step 4: mount the Payment Element ---- */
+  /* mount the Payment Element once contact + address are valid — everything
+     lives on one page here, so "step 4" becomes "the moment the form is
+     complete enough to charge a card" instead of an explicit step. */
   const mountPayment = useCallback(async () => {
     setPayError('');
     setStripeReady(false);
@@ -168,11 +179,14 @@ export default function CheckoutClient({ dict, locale, business }) {
       console.error(e);
       setPayError(t.errors.network);
     }
-  }, [items, method, email, note, d, status, locale]); // eslint-disable-line
+  }, [items, method, email, note, d, status]); // eslint-disable-line
 
   useEffect(() => {
-    if (step === 4 && payMethod === 'card' && status?.stripe) mountPayment();
-  }, [step, payMethod, status?.stripe]); // eslint-disable-line
+    if (payMethod === 'card' && status?.stripe && readyToPay && !stripeMounted) {
+      setStripeMounted(true);
+      mountPayment();
+    }
+  }, [payMethod, status?.stripe, readyToPay, stripeMounted]); // eslint-disable-line
 
   const payCard = async () => {
     const { stripe, elements } = stripeRef.current;
@@ -212,6 +226,13 @@ export default function CheckoutClient({ dict, locale, business }) {
     }
   };
 
+  const placeOrder = () => {
+    setTouched({ name: true, email: true, phone: true });
+    if (!readyToPay) return;
+    if (payMethod === 'cod') placeCod();
+    else payCard();
+  };
+
   /* ---- empty basket ---- */
   if (cart.items.length === 0) {
     return (
@@ -223,79 +244,64 @@ export default function CheckoutClient({ dict, locale, business }) {
     );
   }
 
-  const canContinue = step === 1 ? contactOk : step === 2 ? addressOk : step === 3 ? !!quote : false;
-  const STEPS = [t.steps.contact, t.steps.address, t.steps.method, t.steps.payment];
-
   return (
-    <div ref={topRef} className="grid gap-10 pb-28 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-16 lg:pb-0">
-      <div>
-        <ol className="flex items-center gap-2 sm:gap-3" aria-label={t.steps.label}>
-          {STEPS.map((label, i) => {
-            const n = i + 1;
-            const state = n === step ? 'active' : n < step ? 'done' : '';
-            return (
-              <li key={n} className="flex flex-1 items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => { if (n < step) goto(n); }}
-                  aria-label={`${t.steps.step} ${n}: ${label}`}
-                  aria-current={n === step ? 'step' : undefined}
-                  data-testid={`co-step-${n}`}
-                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-extrabold transition-colors ${state === 'active' ? 'bg-ink text-white' : state === 'done' ? 'bg-sage text-ink' : 'border-2 border-border bg-card text-muted-foreground'}`}
-                >
-                  {n < step ? <Check className="h-4 w-4" /> : n}
-                </button>
-                <span className={`hidden text-xs font-bold sm:inline ${n === step ? 'text-ink' : 'text-muted-foreground'}`}>{label}</span>
-                {n < STEPS.length && <span className="h-0.5 flex-1 rounded bg-border" />}
-              </li>
-            );
-          })}
-        </ol>
-
+    <div className="grid gap-10 pb-28 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-16 lg:pb-0">
+      <div className="space-y-6">
         {quoteErr?.error === 'items' && (
-          <div role="alert" data-testid="stock-issues" className="mt-6 rounded-2xl bg-blush/60 p-4 text-sm text-ink">
+          <div role="alert" data-testid="stock-issues" className="rounded-2xl bg-blush/60 p-4 text-sm text-ink">
             <p>{issueText(quoteErr.issues, t)}</p>
             <Link href={`/${locale}/cart`} className="mt-2 inline-block font-bold underline underline-offset-4">{t.backToCart}</Link>
           </div>
         )}
 
-        {/* ---- 1: contact ---- */}
-        {step === 1 && (
-          <section aria-labelledby="co-contact" className="mt-8 rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-8">
-            <h2 id="co-contact" className="eyebrow-new">{t.contactTitle}</h2>
-            <div className="mt-5 grid gap-5 sm:grid-cols-2">
-              <label className="block">
-                <span className="label-xs">{dict.delivery.name} *</span>
-                <input id="co-name" autoComplete="name" value={d.name} onChange={setD('name')} onBlur={blur('name')} aria-invalid={!!contactErrs.name} className={field} />
-                {contactErrs.name && <span className="mt-1 block text-xs text-destructive">{contactErrs.name}</span>}
-              </label>
-              <label className="block">
-                <span className="label-xs">{dict.delivery.phone} *</span>
-                <input id="co-phone" type="tel" inputMode="tel" autoComplete="tel" dir="ltr" placeholder="+971 5x xxx xxxx" value={d.phone} onChange={setD('phone')} onBlur={blur('phone')} aria-invalid={!!contactErrs.phone} className={field} />
-                {contactErrs.phone && <span className="mt-1 block text-xs text-destructive">{contactErrs.phone}</span>}
-              </label>
-              <label className="block sm:col-span-2">
-                <span className="label-xs">{dict.delivery.email} *</span>
-                <input
-                  id="co-email" type="email" inputMode="email" autoComplete="email" dir="ltr"
-                  value={email}
-                  onChange={(e) => { setEmail(e.target.value); cart.setDelivery({ ...d, email: e.target.value }); }}
-                  onBlur={blur('email')} aria-invalid={!!contactErrs.email} className={field}
-                />
-                {contactErrs.email && <span className="mt-1 block text-xs text-destructive">{contactErrs.email}</span>}
-                <span className="mt-1.5 block text-xs text-muted-foreground">{t.emailNote}</span>
-              </label>
-            </div>
-          </section>
-        )}
+        {/* ---- contact ---- */}
+        <Card eyebrow={t.contactTitle}>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <label className="block">
+              <span className="label-xs">{dict.delivery.name} *</span>
+              <input id="co-name" autoComplete="name" value={d.name} onChange={setD('name')} onBlur={blur('name')} aria-invalid={!!contactErrs.name} className={field} />
+              {contactErrs.name && <span className="mt-1 block text-xs text-destructive">{contactErrs.name}</span>}
+            </label>
+            <label className="block">
+              <span className="label-xs">{dict.delivery.phone} *</span>
+              <input id="co-phone" type="tel" inputMode="tel" autoComplete="tel" dir="ltr" placeholder="+971 5x xxx xxxx" value={d.phone} onChange={setD('phone')} onBlur={blur('phone')} aria-invalid={!!contactErrs.phone} className={field} />
+              {contactErrs.phone && <span className="mt-1 block text-xs text-destructive">{contactErrs.phone}</span>}
+            </label>
+            <label className="block sm:col-span-2">
+              <span className="label-xs">{dict.delivery.email} *</span>
+              <input
+                id="co-email" type="email" inputMode="email" autoComplete="email" dir="ltr"
+                value={email}
+                onChange={(e) => { setEmail(e.target.value); cart.setDelivery({ ...d, email: e.target.value }); }}
+                onBlur={blur('email')} aria-invalid={!!contactErrs.email} className={field}
+              />
+              {contactErrs.email && <span className="mt-1 block text-xs text-destructive">{contactErrs.email}</span>}
+              <span className="mt-1.5 block text-xs text-muted-foreground">{t.emailNote}</span>
+            </label>
+          </div>
+        </Card>
 
-        {/* ---- 2: address (Locate me kept) ---- */}
-        {step === 2 && (
-          <section aria-labelledby="co-addr" className="mt-8 rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-8">
-            <h2 id="co-addr" className="eyebrow-new">{t.addressTitle}</h2>
+        {/* ---- delivery method + address ---- */}
+        <Card eyebrow={t.methodTitle}>
+          <div role="radiogroup" aria-label={t.methodTitle} className="grid gap-3 sm:grid-cols-2">
+            <button type="button" role="radio" aria-checked={method === 'delivery'} onClick={() => setMethod('delivery')} data-testid="method-delivery"
+              className={`rounded-2xl border-2 px-5 py-4 text-start transition-all duration-300 ${method === 'delivery' ? 'border-ink bg-ink text-white' : 'border-border bg-card hover:-translate-y-0.5 hover:border-coral'}`}>
+              <strong className="block text-sm font-semibold">{t.methodDelivery}</strong>
+              <small className={`mt-1 block text-[0.68rem] ${method === 'delivery' ? 'text-white/70' : 'text-muted-foreground'}`}>
+                {quote && quote.method === 'delivery' && quote.deliveryFils === 0 ? t.deliveryFree : t.deliveryFee.replace('{fee}', fmt(quote?.deliveryFils ?? 1500, locale)).replace('{free}', fmt(quote?.freeOverFils ?? 15000, locale))}
+              </small>
+            </button>
+            <button type="button" role="radio" aria-checked={method === 'collect'} onClick={() => !hasPrintDelivery && setMethod('collect')} disabled={hasPrintDelivery} data-testid="method-collect"
+              className={`rounded-2xl border-2 px-5 py-4 text-start transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50 ${method === 'collect' ? 'border-ink bg-ink text-white' : 'border-border bg-card hover:-translate-y-0.5 hover:border-coral'}`}>
+              <strong className="block text-sm font-semibold">{t.methodCollect}</strong>
+              <small className={`mt-1 block text-[0.68rem] ${method === 'collect' ? 'text-white/70' : 'text-muted-foreground'}`}>{hasPrintDelivery ? t.printDeliveryLocked : t.collectNote}</small>
+            </button>
+          </div>
+
+          {method === 'delivery' && (
             <div className="mt-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <label htmlFor="co-address" className="label-xs">{dict.delivery.address} {method === 'delivery' ? '*' : ''}</label>
+                <label htmlFor="co-address" className="label-xs">{dict.delivery.address} *</label>
                 <button type="button" onClick={locate} disabled={geo === 'locating'} className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[0.68rem] font-extrabold uppercase tracking-[0.08em] transition-colors hover:border-coral disabled:opacity-60">
                   <LocateFixed className="h-3.5 w-3.5" strokeWidth={2} />
                   {geo === 'locating' ? dict.delivery.locating : dict.delivery.locate}
@@ -311,75 +317,52 @@ export default function CheckoutClient({ dict, locale, business }) {
                 {geo === 'unsupported' && dict.delivery.geoUnsupported}
               </span>
             </div>
-            <label className="mt-5 block">
-              <span className="label-xs">{t.noteLabel}</span>
-              <textarea id="co-note" rows={2} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t.noteHint} className={`${field} resize-none`} />
-            </label>
-          </section>
-        )}
+          )}
 
-        {/* ---- 3: delivery method ---- */}
-        {step === 3 && (
-          <section aria-labelledby="co-method" className="mt-8 rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-8">
-            <h2 id="co-method" className="eyebrow-new">{t.methodTitle}</h2>
-            <div role="radiogroup" aria-label={t.methodTitle} className="mt-5 grid gap-3 sm:grid-cols-2">
-              <button type="button" role="radio" aria-checked={method === 'delivery'} onClick={() => setMethod('delivery')} data-testid="method-delivery"
-                className={`rounded-2xl border-2 px-5 py-4 text-start transition-all duration-300 ${method === 'delivery' ? 'border-ink bg-ink text-white' : 'border-border bg-card hover:-translate-y-0.5 hover:border-coral'}`}>
-                <span className="mb-1 block text-xl" aria-hidden="true">🛵</span>
-                <strong className="block text-sm font-semibold">{t.methodDelivery}</strong>
-                <small className={`mt-1 block text-[0.68rem] ${method === 'delivery' ? 'text-white/70' : 'text-muted-foreground'}`}>
-                  {quote && quote.method === 'delivery' && quote.deliveryFils === 0 ? t.deliveryFree : t.deliveryFee.replace('{fee}', fmt(quote?.deliveryFils ?? 1500, locale)).replace('{free}', fmt(quote?.freeOverFils ?? 15000, locale))}
-                </small>
-              </button>
-              <button type="button" role="radio" aria-checked={method === 'collect'} onClick={() => !hasPrintDelivery && setMethod('collect')} disabled={hasPrintDelivery} data-testid="method-collect"
-                className={`rounded-2xl border-2 px-5 py-4 text-start transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50 ${method === 'collect' ? 'border-ink bg-ink text-white' : 'border-border bg-card hover:-translate-y-0.5 hover:border-coral'}`}>
-                <span className="mb-1 block text-xl" aria-hidden="true">🏪</span>
-                <strong className="block text-sm font-semibold">{t.methodCollect}</strong>
-                <small className={`mt-1 block text-[0.68rem] ${method === 'collect' ? 'text-white/70' : 'text-muted-foreground'}`}>{hasPrintDelivery ? t.printDeliveryLocked : t.collectNote}</small>
-              </button>
-            </div>
-          </section>
-        )}
+          <label className="mt-5 block">
+            <span className="label-xs">{t.noteLabel}</span>
+            <textarea id="co-note" rows={2} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t.noteHint} className={`${field} resize-none`} />
+          </label>
+        </Card>
 
-        {/* ---- 4: payment ---- */}
-        {step === 4 && (
-          <section aria-labelledby="co-pay" className="mt-8 rounded-3xl border border-border bg-card p-6 shadow-sm sm:p-8">
-            <h2 id="co-pay" className="eyebrow-new">{t.payTitle}</h2>
-            {status && !status.stripe && (
-              <div role="status" className="mt-4 rounded-2xl bg-sun/60 p-4 text-sm text-ink">{t.stripeNotConfigured}</div>
+        {/* ---- payment ---- */}
+        <Card eyebrow={t.payTitle}>
+          {status && !status.stripe && (
+            <div role="status" className="mb-5 rounded-2xl bg-sun/60 p-4 text-sm text-ink">{t.stripeNotConfigured}</div>
+          )}
+          <div role="radiogroup" aria-label={t.payTitle} className="grid gap-3 sm:grid-cols-2">
+            {status?.stripe && (
+              <button type="button" role="radio" aria-checked={payMethod === 'card'} onClick={() => setPayMethod('card')} data-testid="pay-card"
+                className={`rounded-2xl border-2 px-5 py-4 text-start transition-all duration-300 ${payMethod === 'card' ? 'border-ink bg-ink text-white' : 'border-border bg-card hover:-translate-y-0.5 hover:border-coral'}`}>
+                <strong className="block text-sm font-semibold">{t.payCard}</strong>
+                <small className={`mt-1 block text-[0.68rem] ${payMethod === 'card' ? 'text-white/70' : 'text-muted-foreground'}`}>{t.payCardNote}</small>
+              </button>
             )}
-            <div role="radiogroup" aria-label={t.payTitle} className="mt-5 grid gap-3 sm:grid-cols-2">
-              {status?.stripe && (
-                <button type="button" role="radio" aria-checked={payMethod === 'card'} onClick={() => setPayMethod('card')} data-testid="pay-card"
-                  className={`rounded-2xl border-2 px-5 py-4 text-start transition-all duration-300 ${payMethod === 'card' ? 'border-ink bg-ink text-white' : 'border-border bg-card hover:-translate-y-0.5 hover:border-coral'}`}>
-                  <strong className="block text-sm font-semibold">{t.payCard}</strong>
-                  <small className={`mt-1 block text-[0.68rem] ${payMethod === 'card' ? 'text-white/70' : 'text-muted-foreground'}`}>{t.payCardNote}</small>
-                </button>
-              )}
-              {status?.cod !== false && (
-                <button type="button" role="radio" aria-checked={payMethod === 'cod'} onClick={() => setPayMethod('cod')} data-testid="pay-cod"
-                  className={`rounded-2xl border-2 px-5 py-4 text-start transition-all duration-300 ${payMethod === 'cod' ? 'border-ink bg-ink text-white' : 'border-border bg-card hover:-translate-y-0.5 hover:border-coral'}`}>
-                  <strong className="block text-sm font-semibold">{t.payCod}</strong>
-                  <small className={`mt-1 block text-[0.68rem] ${payMethod === 'cod' ? 'text-white/70' : 'text-muted-foreground'}`}>{t.payCodNote}</small>
-                </button>
+            {status?.cod !== false && (
+              <button type="button" role="radio" aria-checked={payMethod === 'cod'} onClick={() => setPayMethod('cod')} data-testid="pay-cod"
+                className={`rounded-2xl border-2 px-5 py-4 text-start transition-all duration-300 ${payMethod === 'cod' ? 'border-ink bg-ink text-white' : 'border-border bg-card hover:-translate-y-0.5 hover:border-coral'}`}>
+                <strong className="block text-sm font-semibold">{t.payCod}</strong>
+                <small className={`mt-1 block text-[0.68rem] ${payMethod === 'cod' ? 'text-white/70' : 'text-muted-foreground'}`}>{t.payCodNote}</small>
+              </button>
+            )}
+          </div>
+
+          {payMethod === 'card' && status?.stripe && (
+            <div className="mt-6">
+              {!readyToPay ? (
+                <p className="rounded-2xl bg-secondary/60 p-4 text-sm text-muted-foreground">{t.errors.contact}</p>
+              ) : (
+                <>
+                  <div id="payment-element" />
+                  {!stripeReady && !payError && <p aria-busy="true" className="text-xs text-muted-foreground">{t.loadingPayment}</p>}
+                </>
               )}
             </div>
-
-            {payMethod === 'card' && status?.stripe && (
-              <div className="mt-6">
-                <div id="payment-element" />
-                {!stripeReady && !payError && <p aria-busy="true" className="text-xs text-muted-foreground">{t.loadingPayment}</p>}
-              </div>
-            )}
-            {payMethod === 'cod' && <p className="mt-5 text-sm text-muted-foreground">{t.codExplain}</p>}
-            {payError && <p role="alert" data-testid="pay-error" className="mt-4 rounded-2xl bg-blush/60 p-3 text-sm text-ink">{payError}</p>}
-            <p className="mt-5 text-xs text-muted-foreground">🔒 {t.secureNote}</p>
-          </section>
-        )}
-
-        {step > 1 && (
-          <button type="button" onClick={() => goto(step - 1)} data-testid="co-back" className="mt-6 text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-muted-foreground underline underline-offset-4">← {t.steps.back}</button>
-        )}
+          )}
+          {payMethod === 'cod' && <p className="mt-5 text-sm text-muted-foreground">{t.codExplain}</p>}
+          {payError && <p role="alert" data-testid="pay-error" className="mt-4 rounded-2xl bg-blush/60 p-3 text-sm text-ink">{payError}</p>}
+          <p className="mt-5 text-xs text-muted-foreground">🔒 {t.secureNote}</p>
+        </Card>
       </div>
 
       {/* ---- order summary: sticky card (desktop) / fixed bottom bar (mobile) ---- */}
@@ -390,41 +373,39 @@ export default function CheckoutClient({ dict, locale, business }) {
             <strong data-testid="co-sticky-total" className="font-display text-lg tabular-nums">{quote ? fmt(quote.totalFils, locale) : '…'}</strong>
           </button>
           <div id="co-summary">
-            <h2 id="co-sum" className="eyebrow-new hidden lg:block">{t.summary}</h2>
+            <span id="co-sum" className="eyebrow-new hidden lg:block">{t.summary}</span>
             {quote ? (
-              <dl data-testid="co-quote" className="mt-4 space-y-2 text-sm">
-                {quote.lines.map((l, i) => (
-                  <div key={i} className="flex justify-between gap-3 border-b border-border/70 pb-2">
-                    <dt className="text-muted-foreground">{l.title} × {l.qty}</dt><dd className="font-medium tabular-nums">{fmt(l.totalFils, locale)}</dd>
+              <>
+                <ul className="mt-4 divide-y divide-border">
+                  {quote.lines.map((l, i) => (
+                    <li key={i} className="flex justify-between gap-3 py-2.5 text-sm"><span className="text-muted-foreground">{l.title} × {l.qty}</span><strong className="tabular-nums">{fmt(l.totalFils, locale)}</strong></li>
+                  ))}
+                </ul>
+                <dl data-testid="co-quote" className="mt-2 space-y-2 border-t border-border pt-3 text-sm">
+                  <div className="flex justify-between">
+                    <dt className="text-muted-foreground">{t.deliveryLine}</dt><dd data-testid="co-delivery" className="font-medium tabular-nums">{quote.deliveryFils === 0 ? t.free : fmt(quote.deliveryFils, locale)}</dd>
                   </div>
-                ))}
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">{t.deliveryLine}</dt><dd data-testid="co-delivery" className="font-medium tabular-nums">{quote.deliveryFils === 0 ? t.free : fmt(quote.deliveryFils, locale)}</dd>
-                </div>
-                <div className="flex justify-between border-t border-border pt-3 text-base">
-                  <dt className="font-semibold">{t.total}</dt><dd data-testid="co-total" className="font-display font-semibold tabular-nums">{fmt(quote.totalFils, locale)}</dd>
-                </div>
-                <p className="text-xs text-muted-foreground">{t.vatNote}</p>
-              </dl>
+                  <div className="flex justify-between border-t border-border pt-3 text-base">
+                    <dt className="font-semibold">{t.total}</dt><dd data-testid="co-total" className="font-display font-semibold tabular-nums">{fmt(quote.totalFils, locale)}</dd>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{t.vatNote}</p>
+                </dl>
+              </>
             ) : quoteErr ? (
               <p className="mt-4 text-sm text-destructive">{quoteErr.error === 'items' ? issueText(quoteErr.issues, t) : t.errors.network}</p>
             ) : (
               <p aria-busy="true" className="mt-4 text-sm text-muted-foreground">…</p>
             )}
           </div>
-          {step < 4 ? (
-            <button type="button" disabled={!canContinue} onClick={() => goto(step + 1)} data-testid="co-next" className="mt-5 w-full rounded-full bg-ink py-4 text-[0.72rem] font-extrabold uppercase tracking-[0.14em] text-white transition-colors hover:bg-coral disabled:cursor-not-allowed disabled:opacity-40">
-              {t.steps.next} →
-            </button>
-          ) : payMethod === 'cod' ? (
-            <button type="button" disabled={paying || !quote} onClick={placeCod} data-testid="co-place-cod" className="mt-5 w-full rounded-full bg-ink py-4 text-[0.72rem] font-extrabold uppercase tracking-[0.14em] text-white transition-colors hover:bg-coral disabled:cursor-not-allowed disabled:opacity-40">
-              {paying ? t.placing : t.placeCod}
-            </button>
-          ) : (
-            <button type="button" disabled={paying || !stripeReady} onClick={payCard} data-testid="co-pay-now" className="mt-5 w-full rounded-full bg-ink py-4 text-[0.72rem] font-extrabold uppercase tracking-[0.14em] text-white transition-colors hover:bg-coral disabled:cursor-not-allowed disabled:opacity-40">
-              {paying ? t.placing : `${t.payNow} · ${quote ? fmt(quote.totalFils, locale) : ''}`}
-            </button>
-          )}
+          <button
+            type="button"
+            disabled={paying || !quote || (payMethod === 'card' && !stripeReady && readyToPay)}
+            onClick={placeOrder}
+            data-testid={payMethod === 'cod' ? 'co-place-cod' : 'co-pay-now'}
+            className="mt-5 w-full rounded-full bg-ink py-4 text-[0.72rem] font-extrabold uppercase tracking-[0.14em] text-white transition-colors hover:bg-coral disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {paying ? t.placing : payMethod === 'cod' ? t.placeCod : `${t.payNow}${quote ? ` · ${fmt(quote.totalFils, locale)}` : ''}`}
+          </button>
         </div>
       </aside>
     </div>

@@ -49,7 +49,7 @@ export default function Footer({ dict, locale, collections = [] }) {
 
       <div className="relative">
         <div className="border-b border-white/15">
-          <div className="mx-auto flex max-w-[1240px] flex-col items-center gap-6 px-4 py-10 text-center sm:px-8 lg:flex-row lg:justify-between lg:text-left">
+          <div className="mx-auto flex max-w-[1240px] flex-col items-center gap-5 px-4 py-8 text-center sm:px-8 lg:flex-row lg:justify-between lg:text-left">
             <div>
               <h2 className="font-display text-3xl sm:text-4xl">{dict.home.newsTitle}</h2>
               <p className="mt-2 text-sm text-white/70">{dict.home.newsLede}</p>
@@ -58,7 +58,7 @@ export default function Footer({ dict, locale, collections = [] }) {
           </div>
         </div>
 
-        <div className="mx-auto max-w-[1240px] px-4 py-12 sm:px-8">
+        <div className="mx-auto max-w-[1240px] px-4 py-10 sm:px-8">
           <div className="grid gap-10 lg:grid-cols-[1.15fr_2fr]">
             <div>
               <img src="/logo-icon.png" alt="Tiny Inks" width={64} height={64} className="h-14 w-14 object-contain" loading="lazy" />
