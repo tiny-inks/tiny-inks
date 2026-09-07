@@ -2,7 +2,7 @@
    fallback on shop pages so nothing jumps while data loads. */
 export default function SkeletonGrid({ count = 6 }) {
   return (
-    <div className="grid" aria-hidden="true">
+    <div className="pgrid" aria-hidden="true">
       {Array.from({ length: count }, (_, i) => (
         <div className="mcard skel-card" key={i}>
           <div className="skel skel-media" />

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Check, Send } from 'lucide-react';
 import { fmtMoney, PRINT } from '@/lib/print';
 
 const KEY = 'ti_print_job';
@@ -17,76 +18,79 @@ export default function PrintConfirmation({ dict, locale, business }) {
 
   if (none) {
     return (
-      <div className="empty">
-        <div className="empty-glyph" aria-hidden="true">✦</div>
-        <h3>{c.none}</h3>
-        <Link href={`/${locale}/print`} className="btn btn-primary">{c.startNew}</Link>
-      </div>
+      <section className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center px-5 text-center">
+        <h3 className="display-md">{c.none}</h3>
+        <Link href={`/${locale}/print`} className="mt-7 inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 text-[0.72rem] font-extrabold uppercase tracking-[0.12em] text-white transition-colors hover:bg-coral">{c.startNew}</Link>
+      </section>
     );
   }
-  if (!job) return <div className="print-confirm" aria-busy="true" />;
+  if (!job) return <div aria-busy="true" className="min-h-[40vh]" />;
 
   const q = job.quote;
   const waText = encodeURIComponent(`${c.waMsg} ${job.orderName || ''} — ${fmtMoney(q.total, locale)}`);
   const hours = PRINT.pickup.readyInHours;
 
   return (
-    <div className="print-confirm">
-      <div className="confirm-hero">
-        <span className="confirm-check" aria-hidden="true">✓</span>
+    <section className="mx-auto max-w-[1240px] px-5 py-14 sm:px-8 sm:py-20">
+      <div className="flex flex-col items-center gap-5 text-center">
+        <div className="grid h-16 w-16 place-items-center rounded-full bg-sage text-ink"><Check className="h-7 w-7" strokeWidth={1.8} /></div>
         <div>
-          <div className="eyebrow">{job.demo ? c.demoEyebrow : c.eyebrow}</div>
-          <h1 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)' }}>{c.title}</h1>
-          {job.orderName && <p className="confirm-order">{c.orderNo}: <strong>{job.orderName}</strong></p>}
+          <span className="eyebrow-new">{job.demo ? c.demoEyebrow : c.eyebrow}</span>
+          <h1 className="display-lg mt-2">{c.title}</h1>
+          {job.orderName && <p className="mt-3 text-sm text-muted-foreground">{c.orderNo}: <strong className="text-foreground">{job.orderName}</strong></p>}
         </div>
       </div>
 
-      {job.demo && <div className="form-err" role="status">{c.demoNote}</div>}
+      {job.demo && <div role="status" className="mx-auto mt-6 max-w-lg rounded-2xl bg-blush/60 p-4 text-center text-sm text-ink">{c.demoNote}</div>}
       {!job.demo && !job.paid && (
-        <div className="confirm-pay">
-          <p>{c.payNote}</p>
-          <Link href={`/${locale}/cart`} className="btn btn-primary">{c.payCta}</Link>
+        <div className="mx-auto mt-6 max-w-lg rounded-2xl bg-sun/60 p-5 text-center">
+          <p className="text-sm text-ink">{c.payNote}</p>
+          <Link href={`/${locale}/cart`} className="mt-3 inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3.5 text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-white transition-colors hover:bg-coral">{c.payCta}</Link>
         </div>
       )}
 
-      <div className="confirm-grid">
-        <section className="confirm-card">
-          <h3>{c.summary}</h3>
-          <ul className="confirm-files">
-            {job.files.map((f, i) => <li key={i}><span>{f.name}</span><small>{f.pages} {t.pagesShort}</small></li>)}
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        <section className="rounded-3xl border border-border bg-card p-6 sm:p-8">
+          <h3 className="eyebrow-new">{c.summary}</h3>
+          <ul className="mt-3 space-y-1.5">
+            {job.files.map((f, i) => (
+              <li key={i} className="flex justify-between gap-3 text-sm"><span className="truncate">{f.name}</span><small className="shrink-0 text-muted-foreground">{f.pages} {t.pagesShort}</small></li>
+            ))}
           </ul>
-          <dl className="confirm-opts">
-            <div><dt>{t.opt.size}</dt><dd>{q.size}</dd></div>
-            <div><dt>{t.opt.color}</dt><dd>{t.colors[q.color]}</dd></div>
-            <div><dt>{t.opt.sided}</dt><dd>{t.sides[q.sided]}</dd></div>
-            <div><dt>{t.opt.copies}</dt><dd>{q.copies}</dd></div>
-            <div><dt>{t.opt.finishing}</dt><dd>{t.finishing[q.finishing]}</dd></div>
-            <div><dt>{t.opt.fulfilment}</dt><dd>{t.fulfil[q.fulfilment]}</dd></div>
-            {job.note && <div><dt>{t.noteLabel}</dt><dd>{job.note}</dd></div>}
+          <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-border pt-4 text-sm">
+            {[
+              [t.opt.size, q.size], [t.opt.color, t.colors[q.color]], [t.opt.sided, t.sides[q.sided]],
+              [t.opt.copies, q.copies], [t.opt.finishing, t.finishing[q.finishing]], [t.opt.fulfilment, t.fulfil[q.fulfilment]],
+              ...(job.note ? [[t.noteLabel, job.note]] : []),
+            ].map(([label, val]) => (
+              <div key={label}><dt className="label-xs">{label}</dt><dd className="font-medium">{val}</dd></div>
+            ))}
           </dl>
-          <div className="quote-lines">
+          <div className="mt-4 space-y-2 border-t border-border pt-4 text-sm">
             {q.lines.map((l, i) => (
-              <div key={i} className={`quote-line ${l.amount < 0 ? 'neg' : ''}`}>
-                <span>{lineLabel(l, t)}</span><strong>{fmtMoney(l.amount, locale)}</strong>
+              <div key={i} className="flex justify-between">
+                <span className={l.amount < 0 ? 'text-sage' : 'text-muted-foreground'}>{lineLabel(l, t)}</span><strong className="tabular-nums">{fmtMoney(l.amount, locale)}</strong>
               </div>
             ))}
-            <div className="quote-line total"><span>{t.quote.total}</span><strong>{fmtMoney(q.total, locale)}</strong></div>
+            <div className="flex justify-between border-t border-border pt-3 text-base"><span className="font-semibold">{t.quote.total}</span><strong className="font-display tabular-nums">{fmtMoney(q.total, locale)}</strong></div>
           </div>
         </section>
 
-        <section className="confirm-card">
-          <h3>{c.nextTitle}</h3>
-          <ol className="confirm-steps">
+        <section className="rounded-3xl border border-border bg-card p-6 text-center sm:p-8">
+          <h3 className="eyebrow-new">{c.nextTitle}</h3>
+          <ol className="mx-auto mt-4 max-w-sm list-decimal space-y-2 text-start text-sm text-muted-foreground [&>li]:ms-5">
             <li>{job.demo ? c.step1Demo : c.step1}</li>
             <li>{q.fulfilment === 'delivery' ? c.step2Delivery : c.step2Collect.replace('{hours}', String(hours))}</li>
             <li>{c.step3}</li>
           </ol>
-          <p className="field-note">{t.privacyShort}</p>
-          <a className="btn btn-primary" href={`${business.whatsappHref}?text=${waText}`} target="_blank" rel="noreferrer">{c.whatsapp}</a>
-          <Link href={`/${locale}/print`} className="btn btn-ghost btn-sm" style={{ marginTop: 10 }}>{c.startNew}</Link>
+          <p className="mt-4 text-xs text-muted-foreground">{t.privacyShort}</p>
+          <a href={`${business.whatsappHref}?text=${waText}`} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3.5 text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-white transition-colors hover:bg-coral">
+            <Send className="h-4 w-4" /> {c.whatsapp}
+          </a>
+          <Link href={`/${locale}/print`} className="mt-4 block text-[0.68rem] font-bold uppercase tracking-[0.1em] text-muted-foreground underline underline-offset-4">{c.startNew}</Link>
         </section>
       </div>
-    </div>
+    </section>
   );
 }
 

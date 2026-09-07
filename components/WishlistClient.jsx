@@ -1,5 +1,4 @@
 'use client';
-import Link from 'next/link';
 import ProductCard from './ProductCard';
 import EmptyState from './EmptyState';
 import { assignGridImages } from '@/lib/product-images';
@@ -11,7 +10,7 @@ export default function WishlistClient({ products, dict, locale, collections = [
 
   if (saved.length === 0) {
     return (
-      <div style={{ maxWidth: 640, margin: '0 auto' }}>
+      <div className="mx-auto max-w-xl">
         <EmptyState dict={dict} locale={locale} collections={collections} title={dict.cartUi.empty} cta={dict.cartUi.emptyCta} ctaHref={`/${locale}/shop`} />
       </div>
     );
@@ -19,9 +18,9 @@ export default function WishlistClient({ products, dict, locale, collections = [
 
   const gridImages = assignGridImages(saved);
   return (
-    <div className="grid">
-      {saved.map((p) => (
-        <ProductCard key={p.id} product={p} locale={locale} dict={dict} image={gridImages[p.handle]} />
+    <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+      {saved.map((p, i) => (
+        <ProductCard key={p.id} product={p} locale={locale} dict={dict} image={gridImages[p.handle]} index={i} />
       ))}
     </div>
   );

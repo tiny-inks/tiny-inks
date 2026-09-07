@@ -7,7 +7,7 @@ import { WishlistProvider } from '@/components/WishlistContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
-import BottomNav from '@/components/BottomNav';
+import { Toaster } from 'sonner';
 
 
 export function generateStaticParams() {
@@ -56,15 +56,14 @@ export default async function LocaleLayout({ children, params }) {
     >
       <head>
         <link rel="preconnect" href="https://images.unsplash.com" />
-        {/* self-hosted fonts (public/fonts) — preload the ones this locale paints first */}
-        {(locale === 'ar'
-          ? ['/fonts/el-messiri-arabic.woff2', '/fonts/plex-arabic-arabic-400.woff2']
-          : ['/fonts/fraunces-latin.woff2', '/fonts/karla-latin.woff2']
-        ).map((href) => (
-          <link key={href} rel="preload" as="font" type="font/woff2" href={href} crossOrigin="anonymous" />
-        ))}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800;900&family=Cairo:wght@500;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap"
+        />
       </head>
-      <body>
+      <body className="brand-new">
         <a className="skip-link" href="#content">
           {locale === 'ar' ? 'تخطَّ إلى المحتوى' : 'Skip to content'}
         </a>
@@ -74,7 +73,7 @@ export default async function LocaleLayout({ children, params }) {
             <main id="content">{children}</main>
             <Footer dict={dict} locale={locale} collections={collections} />
             <CartDrawer dict={dict} locale={locale} collections={collections} />
-            <BottomNav dict={dict} locale={locale} />
+            <Toaster position={locale === 'ar' ? 'top-left' : 'top-right'} richColors dir={dir} />
           </WishlistProvider>
         </CartProvider>
       </body>

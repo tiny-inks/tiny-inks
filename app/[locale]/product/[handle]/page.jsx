@@ -1,11 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import Reveal from '@/components/Reveal';
+import { Plus, ShieldCheck, Store, Truck } from 'lucide-react';
 import Gallery from '@/components/Gallery';
 import AddToCart from '@/components/AddToCart';
-import BuyBar from '@/components/BuyBar';
 import ProductCard from '@/components/ProductCard';
-import Shelf from '@/components/Shelf';
 import WishlistButton from '@/components/WishlistButton';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { productImages, withGridImages } from '@/lib/product-images';
@@ -24,24 +22,17 @@ export async function generateMetadata({ params }) {
   };
 }
 
-/* tags that describe the product (not the colour marker) */
 const realTags = (p) => (p.tags || []).filter((t) => !/^color:/.test(t));
 
-function Row({ id, title, products, locale, dict }) {
+function Row({ title, products, locale, dict }) {
   if (!products.length) return null;
   return (
-    <section className="section row-section" id={id} style={{ paddingTop: 0 }}>
-      <div className="wrap">
-        <div className="section-head">
-          <Reveal><h2 style={{ marginBottom: 0 }}>{title}</h2></Reveal>
-        </div>
-        <Reveal>
-          <Shelf ariaLabel={title}>
-            {withGridImages(products).map(([p, image]) => (
-              <ProductCard key={p.id} product={p} locale={locale} dict={dict} image={image} />
-            ))}
-          </Shelf>
-        </Reveal>
+    <section className="mx-auto max-w-[1240px] px-4 py-14 sm:px-8">
+      <h2 className="display-md">{title}</h2>
+      <div className="mt-8 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+        {withGridImages(products).map(([p, image], i) => (
+          <ProductCard key={p.id} product={p} locale={locale} dict={dict} image={image} index={i} />
+        ))}
       </div>
     </section>
   );
@@ -58,7 +49,6 @@ export default async function ProductPage({ params }) {
   const col = collections.find((c) => product.collections?.includes(c.handle));
   const others = all.filter((p) => p.handle !== product.handle);
 
-  /* "You may also like" — the same Shopify collection (falls back to same type, then newest) */
   let sameCollection = [];
   if (col) {
     const data = await getCollectionWithProducts(col.handle, locale);
@@ -68,8 +58,6 @@ export default async function ProductPage({ params }) {
     : others.filter((p) => p.productType === product.productType).length ? others.filter((p) => p.productType === product.productType)
     : others).slice(0, 8);
 
-  /* "Frequently bought together" — shares a tag or a brand but is a different
-     kind of product (a pen for a notebook, not another notebook) */
   const tags = new Set(realTags(product));
   const alsoSet = new Set(alsoLike.map((p) => p.handle));
   const complementary = others.filter((p) => p.productType !== product.productType && !alsoSet.has(p.handle));
@@ -95,141 +83,126 @@ export default async function ProductPage({ params }) {
       '@type': 'Offer',
       priceCurrency: product.currency || 'AED',
       price: String(product.price),
-      availability: product.available
-        ? 'https://schema.org/InStock'
-        : 'https://schema.org/OutOfStock',
+      availability: product.available ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
     },
   };
 
-  const offers = [
-    { icon: '❀', t: t.offerWrap, d: t.offerWrapText },
-    { icon: '⚡', t: t.offerDelivery, d: t.offerDeliveryText.replace('{amount}', formatPrice(FREE_DELIVERY_THRESHOLD, 'AED', locale)) },
-    { icon: '▣', t: t.offerBulk, d: t.offerBulkText, href: `${b.whatsappHref}?text=${encodeURIComponent(dict.footerUi.bulkMsg + product.title)}` },
+  const deliveryInfo = [
+    { Icon: Truck, text: t.shippingText },
+    { Icon: Store, text: t.wrapText },
+    { Icon: ShieldCheck, text: t.returnsPoints[0] },
   ];
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <section className="section pdp-section" style={{ paddingTop: 'clamp(18px, 3vw, 34px)' }}>
-        <div className="wrap" style={{ marginBottom: 14 }}>
-          <Breadcrumbs
-            dict={dict}
-            locale={locale}
-            items={[
-              { href: `/${locale}/shop`, label: dict.nav.shop },
-              ...(col ? [{ href: `/${locale}/shop/${col.handle}`, label: col.title }] : []),
-              { label: product.title },
-            ]}
-          />
-        </div>
-        <div className="wrap pdp">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+
+      <section className="mx-auto max-w-[1240px] px-4 pt-6 sm:px-8">
+        <Breadcrumbs dict={dict} locale={locale} items={[
+          { href: `/${locale}/shop`, label: dict.nav.shop },
+          ...(col ? [{ href: `/${locale}/shop/${col.handle}`, label: col.title }] : []),
+          { label: product.title },
+        ]} />
+      </section>
+
+      <section className="mx-auto max-w-[1240px] px-4 py-6 sm:px-8 sm:py-9">
+        <div className="grid gap-8 md:grid-cols-2">
           <div>
             <Gallery images={gallery} title={product.title} handle={product.handle} noImageLabel={dict.cartUi.noImage} />
-            {illustrative && <p className="img-note">{t.illustrative}</p>}
+            {illustrative && <p className="mt-2 text-xs text-muted-foreground">{t.illustrative}</p>}
           </div>
-          <div className="pdp-buy">
-            <h1 style={{ fontSize: 'clamp(1.9rem, 4vw, 3rem)' }}>{product.title}</h1>
-            {/* brand · category — always visible, always tappable */}
-            <div className="pdp-facts">
-              {product.vendor && (
-                <span className="fact">
-                  <small>{t.brandLabel}</small>
-                  {product.vendor !== 'Tiny Inks'
-                    ? <Link href={`/${locale}/shop?brand=${encodeURIComponent(product.vendor)}`}>{product.vendor}</Link>
-                    : <b>{product.vendor}</b>}
-                </span>
-              )}
-              <span className="fact">
-                <small>{t.categoryLabel}</small>
-                {col ? <Link href={`/${locale}/shop/${col.handle}`}>{col.title}</Link> : <b>{product.productType}</b>}
-              </span>
+
+          <div className="flex flex-col">
+            <span className="label-xs text-muted-foreground">
+              {product.vendor ? (product.vendor !== 'Tiny Inks' ? <Link href={`/${locale}/shop?brand=${encodeURIComponent(product.vendor)}`} className="hover:text-coral">{product.vendor}</Link> : product.vendor) : ''}
+              {product.vendor && (col || product.productType) ? ' · ' : ''}
+              {col ? <Link href={`/${locale}/shop/${col.handle}`} className="hover:text-coral">{col.title}</Link> : product.productType}
+            </span>
+            <h1 className="mt-2 font-display text-2xl leading-tight sm:text-3xl">{product.title}</h1>
+            {paragraphs.length > 0 && <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{paragraphs[0]}</p>}
+
+            <div className="mt-5 flex items-baseline gap-3">
+              <span className="font-display text-3xl tabular-nums">{formatPrice(product.price, product.currency, locale)}</span>
+              {product.compareAtPrice ? <span className="text-sm text-muted-foreground line-through">{formatPrice(product.compareAtPrice, product.currency, locale)}</span> : null}
             </div>
-            <div className="pdp-price-row">
-              <div className="pdp-price">{formatPrice(product.price, product.currency, locale)}</div>
-              {product.compareAtPrice ? <div className="mcard-compare">{formatPrice(product.compareAtPrice, product.currency, locale)}</div> : null}
-              <div className={`card-stock ${product.available ? 'in' : 'out'}`}>
-                <span className="stock-dot" aria-hidden="true" />
-                {product.available ? t.instock : t.soldout}
-              </div>
+            <div className={`mt-2 inline-flex w-fit items-center gap-1.5 text-xs font-bold ${product.available ? 'text-sage' : 'text-destructive'}`}>
+              <span className={`h-2 w-2 rounded-full ${product.available ? 'bg-sage' : 'bg-destructive'}`} />
+              {product.available ? t.instock : t.soldout}
             </div>
-            <div className="buy-with-wish">
+
+            <div className="mt-6 flex flex-wrap items-center gap-3">
               <AddToCart product={product} dict={dict} />
               <WishlistButton handle={product.handle} dict={dict} />
             </div>
-            <div className="pdp-meta">
-              <div><strong>{t.shipping}:</strong> {t.shippingText}</div>
-              <div><strong>{t.wrap}:</strong> {t.wrapText}</div>
-            </div>
+
+            <ul className="mt-6 grid gap-2 text-xs text-muted-foreground">
+              {deliveryInfo.map(({ Icon, text }, i) => (
+                <li key={i} className="flex items-center gap-2"><Icon className="h-4 w-4 shrink-0 text-coral" strokeWidth={1.7} /> {text}</li>
+              ))}
+            </ul>
           </div>
         </div>
 
-        {/* after the buy box, in this order: description · delivery/returns · also like · bought together · offers */}
-        <div className="wrap pdp-below">
-          <div className="accordion" id="delivery-returns">
-            <details className="acc-item" open id="description">
-              <summary>{t.descTitle}</summary>
-              <div className="acc-body">
-                {product.descriptionHtml ? (
-                  <div className="prose" dangerouslySetInnerHTML={{ __html: product.descriptionHtml }} />
-                ) : paragraphs.length ? (
-                  <div className="prose">{paragraphs.map((p, i) => <p key={i}>{p}</p>)}</div>
-                ) : (
-                  <p className="prose">{t.noDesc}</p>
-                )}
-              </div>
-            </details>
-            <details className="acc-item">
-              <summary>{t.deliveryTitle}</summary>
-              <div className="acc-body">
-                <p>{t.shippingText}</p>
-                <ul>
-                  {t.deliveryPoints.map((s, i) => <li key={i}>{s}</li>)}
-                </ul>
-                <Link href={`/${locale}/policies/shipping`} className="pdp-link">{dict.policies.shipping} →</Link>
-              </div>
-            </details>
-            <details className="acc-item">
-              <summary>{t.returnsTitle}</summary>
-              <div className="acc-body">
-                <ul>
-                  {t.returnsPoints.map((s, i) => <li key={i}>{s}</li>)}
-                </ul>
-                <Link href={`/${locale}/policies/returns`} className="pdp-link">{dict.policies.returns} →</Link>
-              </div>
-            </details>
-          </div>
+        <div className="mt-14 divide-y divide-border rounded-3xl border border-border">
+          <details className="group px-6 py-5" open>
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-base">
+              {t.descTitle}<Plus className="h-4 w-4 shrink-0 transition-transform group-open:rotate-45" />
+            </summary>
+            <div className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              {product.descriptionHtml ? (
+                <div className="prose" dangerouslySetInnerHTML={{ __html: product.descriptionHtml }} />
+              ) : paragraphs.length ? (
+                paragraphs.map((p, i) => <p key={i} className="mb-2">{p}</p>)
+              ) : (
+                <p>{t.noDesc}</p>
+              )}
+            </div>
+          </details>
+          <details className="group px-6 py-5">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-base">
+              {t.deliveryTitle}<Plus className="h-4 w-4 shrink-0 transition-transform group-open:rotate-45" />
+            </summary>
+            <div className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              <p>{t.shippingText}</p>
+              <ul className="mt-2 list-disc ps-5">{t.deliveryPoints.map((s, i) => <li key={i}>{s}</li>)}</ul>
+              <Link href={`/${locale}/policies/shipping`} className="mt-2 inline-block font-bold text-coral">{dict.policies.shipping} →</Link>
+            </div>
+          </details>
+          <details className="group px-6 py-5">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-base">
+              {t.returnsTitle}<Plus className="h-4 w-4 shrink-0 transition-transform group-open:rotate-45" />
+            </summary>
+            <div className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              <ul className="list-disc ps-5">{t.returnsPoints.map((s, i) => <li key={i}>{s}</li>)}</ul>
+              <Link href={`/${locale}/policies/returns`} className="mt-2 inline-block font-bold text-coral">{dict.policies.returns} →</Link>
+            </div>
+          </details>
         </div>
       </section>
 
-      <Row id="also-like" title={t.alsoLike} products={alsoLike} locale={locale} dict={dict} />
-      <Row id="bought-together" title={t.related} products={boughtTogether} locale={locale} dict={dict} />
+      <Row title={t.alsoLike} products={alsoLike} locale={locale} dict={dict} />
+      <Row title={t.related} products={boughtTogether} locale={locale} dict={dict} />
 
-      {/* offers strip */}
-      <section className="section row-section" style={{ paddingTop: 0 }}>
-        <div className="wrap">
-          <div className="offers-strip">
-            {offers.map((o, i) => {
-              const inner = (
-                <>
-                  <span className="offer-glyph" aria-hidden="true">{o.icon}</span>
-                  <span><strong>{o.t}</strong><small>{o.d}</small></span>
-                </>
-              );
-              return o.href
-                ? <a key={i} className="offer" href={o.href} target="_blank" rel="noreferrer">{inner}</a>
-                : <div key={i} className="offer">{inner}</div>;
-            })}
-          </div>
+      <section className="mx-auto max-w-[1240px] px-4 pb-14 sm:px-8">
+        <div className="grid gap-4 sm:grid-cols-3">
+          {[
+            { t: t.offerWrap, d: t.offerWrapText },
+            { t: t.offerDelivery, d: t.offerDeliveryText.replace('{amount}', formatPrice(FREE_DELIVERY_THRESHOLD, 'AED', locale)) },
+            { t: t.offerBulk, d: t.offerBulkText, href: `${b.whatsappHref}?text=${encodeURIComponent(dict.footerUi.bulkMsg + product.title)}` },
+          ].map((o, i) => {
+            const Tag = o.href ? 'a' : 'div';
+            return (
+              <Tag key={i} {...(o.href ? { href: o.href, target: '_blank', rel: 'noreferrer' } : {})} className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-coral">
+                <strong className="block font-display text-sm">{o.t}</strong>
+                <small className="mt-1 block text-xs text-muted-foreground">{o.d}</small>
+              </Tag>
+            );
+          })}
         </div>
       </section>
 
       <RecentlyViewedTracker handle={product.handle} />
       <RecentlyViewedRow products={all} dict={dict} locale={locale} excludeHandle={product.handle} />
-
-      <BuyBar product={product} dict={dict} locale={locale} />
     </>
   );
 }

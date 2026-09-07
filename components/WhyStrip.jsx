@@ -24,7 +24,7 @@ export default function WhyStrip({ dict }) {
   return (
     <section className="section" style={{ paddingTop: 0 }}>
       <div className="wrap">
-        <div className="block cream grain why-strip">
+        <div className="content-block cream grain why-strip">
           <h2 style={{ textAlign: 'center', marginBottom: 28 }}>{dict.home.whyTitle}</h2>
           <div className="why-grid">
             {dict.home.why.map((item, i) => (

@@ -12,12 +12,8 @@ export default function OrderConfirmedPage({ params }) {
   const locale = params.locale === 'ar' ? 'ar' : 'en';
   const dict = getDict(locale);
   return (
-    <section className="section" style={{ paddingTop: 'clamp(24px, 4vw, 44px)' }}>
-      <div className="wrap" style={{ maxWidth: 680 }}>
-        <Suspense fallback={null}>
-          <OrderConfirmed dict={dict} locale={locale} business={getBusiness()} />
-        </Suspense>
-      </div>
-    </section>
+    <Suspense fallback={null}>
+      <OrderConfirmed dict={dict} locale={locale} business={getBusiness()} />
+    </Suspense>
   );
 }

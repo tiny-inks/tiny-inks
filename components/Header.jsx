@@ -1,291 +1,243 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import {
+  Globe, Heart, Home as HomeIcon, Info, Mail, Menu, Phone, Printer, Search, Send, ShoppingBag, Store, Truck, X,
+} from 'lucide-react';
 import { useCart } from './CartContext';
 import { useWishlist } from './WishlistContext';
+import { getBusiness } from '@/lib/site';
 
-/* ONE compact sticky row. Desktop: Home · Shop (Citron-style mega menu:
-   Category / Brand / Price / Featured columns + promo tile) · Print · About ·
-   Contact + inline search. Phones: search behind the icon, and the menu is the
-   same 5 links with accordions for the Shop groups. */
-export const OPEN_SEARCH_EVENT = 'ti:open-search';
-
-export default function Header({ dict, locale, collections = [], brands = [] }) {
+/* Lovable-style header: announcement marquee + compact sticky nav row +
+   full-screen slide-in menu on phones (icon tiles, no bottom tab bar). */
+export default function Header({ dict, locale }) {
   const [menu, setMenu] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [megaOpen, setMegaOpen] = useState(false);
-  const [term, setTerm] = useState('');
   const pathname = usePathname();
-  const router = useRouter();
   const cart = useCart();
   const wishlist = useWishlist();
-  const mobileInput = useRef(null);
-  const megaRef = useRef(null);
+  const lockedScrollY = useRef(0);
+  const b = getBusiness();
 
-  /* route change closes everything */
-  useEffect(() => { setMenu(false); setSearchOpen(false); setMegaOpen(false); }, [pathname]);
+  useEffect(() => setMenu(false), [pathname]);
 
   useEffect(() => {
-    document.body.style.overflow = menu ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    if (!menu) return;
+    lockedScrollY.current = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${lockedScrollY.current}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.width = '';
+      document.body.style.overflow = '';
+      window.scrollTo(0, lockedScrollY.current);
+    };
   }, [menu]);
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') { setMenu(false); setSearchOpen(false); setMegaOpen(false); } };
-    const onClick = (e) => { if (megaRef.current && !megaRef.current.contains(e.target)) setMegaOpen(false); };
-    window.addEventListener('keydown', onKey);
-    document.addEventListener('click', onClick);
-    return () => { window.removeEventListener('keydown', onKey); document.removeEventListener('click', onClick); };
-  }, []);
-
-  /* the bottom tab bar's Search tab asks the header to open the search row */
-  useEffect(() => {
-    const open = () => { setMenu(false); setSearchOpen(true); };
-    window.addEventListener(OPEN_SEARCH_EVENT, open);
-    return () => window.removeEventListener(OPEN_SEARCH_EVENT, open);
-  }, []);
-  useEffect(() => {
-    if (searchOpen) setTimeout(() => mobileInput.current?.focus(), 60);
-  }, [searchOpen]);
 
   const otherLocale = locale === 'ar' ? 'en' : 'ar';
   const rest = pathname.replace(/^\/(en|ar)/, '') || '';
   const is = (href) => pathname === href;
-  const inShop = pathname.startsWith(`/${locale}/shop`) || pathname.startsWith(`/${locale}/product`);
-  const b = { wa: (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '971500000000').replace(/\D/g, '') };
-  const mm = dict.megaMenu;
 
   const NAV = [
     { href: `/${locale}`, label: dict.nav.home, active: is(`/${locale}`) },
-    { href: `/${locale}/shop`, label: dict.nav.shop, active: inShop, mega: true },
+    { href: `/${locale}/shop`, label: dict.nav.shop, active: pathname.startsWith(`/${locale}/shop`) || pathname.startsWith(`/${locale}/product`) },
     { href: `/${locale}/print`, label: dict.nav.print, active: pathname.startsWith(`/${locale}/print`) },
     { href: `/${locale}/about`, label: dict.nav.about, active: is(`/${locale}/about`) },
     { href: `/${locale}/contact`, label: dict.nav.contact, active: is(`/${locale}/contact`) },
   ];
 
-  /* the four Shop groups — shared by the desktop mega menu and mobile accordions */
-  const groups = [
-    {
-      key: 'category', title: mm.byCategory,
-      links: [
-        { href: `/${locale}/shop`, label: dict.nav.allProducts },
-        ...collections.map((c) => ({ href: `/${locale}/shop/${c.handle}`, label: c.title })),
-      ],
-    },
-    {
-      key: 'brand', title: mm.byBrand,
-      links: brands.map((name) => ({ href: `/${locale}/shop?brand=${encodeURIComponent(name)}`, label: name })),
-    },
-    {
-      key: 'price', title: mm.byPrice,
-      links: dict.priceRow.chips.map((c) => {
-        const p = new URLSearchParams();
-        if (c.min) p.set('min', String(c.min));
-        if (c.max) p.set('max', String(c.max));
-        return { href: `/${locale}/shop?${p.toString()}`, label: c.label };
-      }),
-    },
-    {
-      key: 'featured', title: mm.featured,
-      links: [
-        { href: `/${locale}/shop?sort=new`, label: mm.newArrivals },
-        { href: `/${locale}/shop`, label: mm.bestSellers },
-        { href: `/${locale}/bundles`, label: mm.giftSets },
-        { href: `https://wa.me/${b.wa}?text=${encodeURIComponent(dict.footerUi.bulkMsg)}`, label: mm.bulkOrders, ext: true },
-      ],
-    },
+  const MENU_NAV = [
+    { href: `/${locale}`, label: dict.nav.home, sub: dict.header.allCategories, Icon: HomeIcon, tint: 'bg-coral/15 text-coral' },
+    { href: `/${locale}/shop`, label: dict.nav.shop, sub: dict.tagline, Icon: Store, tint: 'bg-sky/30 text-ink' },
+    { href: `/${locale}/wishlist`, label: dict.nav.wishlist, sub: dict.cartUi.viewCart, Icon: Heart, tint: 'bg-coral/15 text-coral' },
+    { href: `/${locale}/print`, label: dict.nav.print, sub: dict.print.eyebrow, Icon: Printer, tint: 'bg-cyan/40 text-ink' },
+    { href: `/${locale}/about`, label: dict.nav.about, sub: dict.about.eyebrow, Icon: Info, tint: 'bg-sky/50 text-ink' },
+    { href: `/${locale}/contact`, label: dict.nav.contact, sub: dict.contact.eyebrow, Icon: Mail, tint: 'bg-coral/15 text-coral' },
   ];
 
-  const submitSearch = (e) => {
-    e.preventDefault();
-    const q = term.trim();
-    setMenu(false);
-    setSearchOpen(false);
-    router.push(`/${locale}/shop${q ? `?q=${encodeURIComponent(q)}` : ''}`);
-  };
-
-  const searchForm = (extraClass, ref) => (
-    <form className={`mk-search ${extraClass}`} onSubmit={submitSearch} role="search">
-      <input
-        ref={ref}
-        id={extraClass.includes('mobile') ? 'site-search-mobile' : 'site-search'}
-        type="search"
-        value={term}
-        onChange={(e) => setTerm(e.target.value)}
-        placeholder={dict.search.placeholder}
-        aria-label={dict.search.label}
-      />
-      <button type="submit" aria-label={dict.search.label}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
-          <circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5 5" />
-        </svg>
-      </button>
-    </form>
-  );
-
-  const linkOut = (l, extra = '', tab) => l.ext
-    ? <a key={l.label} href={l.href} target="_blank" rel="noreferrer" className={extra} tabIndex={tab}>{l.label}</a>
-    : <Link key={l.href + l.label} href={l.href} className={extra} tabIndex={tab}>{l.label}</Link>;
+  const socials = [
+    ...(b.instagram ? [{ Icon: Send, label: 'Instagram', href: b.instagram }] : []),
+    ...(b.tiktok ? [{ Icon: Send, label: 'TikTok', href: b.tiktok }] : []),
+    { Icon: Send, label: 'WhatsApp', href: b.whatsappHref },
+  ];
 
   return (
     <>
-      {/* Citron-style time-driven CSS marquee: two identical copies scroll -50%, pauses on hover/focus */}
-      <div className="announce" role="status" aria-label="Announcements">
-        <div className="announce-track">
-          {[0, 1].map((copy) => (
-            <div className="announce-group" key={copy} aria-hidden={copy === 1}>
-              {dict.announce.map((msg, i) => (
-                <span className="announce-item" key={i}>
-                  ✦ {msg}
-                  {i < dict.announce.length - 1 && <span className="announce-sep" aria-hidden="true">•</span>}
-                </span>
+      <div className="sticky top-0 z-50 shadow-[0_8px_30px_-24px_var(--ink)]">
+        {/* Announcement bar */}
+        <div className="flex h-7 items-center gap-4 overflow-hidden bg-ink px-4 text-[0.63rem] font-bold text-white sm:px-8">
+          <span className="hidden shrink-0 items-center gap-2 lg:flex">
+            <Truck className="h-4 w-4" strokeWidth={1.6} /> {dict.tagline}
+          </span>
+          <div className="relative flex-1 overflow-hidden">
+            <div className="marquee-new flex w-max">
+              {[0, 1].map((dup) => (
+                <div key={dup} className="flex shrink-0">
+                  {dict.announce.map((msg, i) => (
+                    <span key={`${dup}-${i}`} className="flex items-center gap-6 px-6 whitespace-nowrap">
+                      {msg}
+                      <span className="text-coral">●</span>
+                    </span>
+                  ))}
+                </div>
               ))}
-              <span className="announce-sep" aria-hidden="true">•</span>
             </div>
-          ))}
+          </div>
+          <a href={b.whatsappHref} target="_blank" rel="noreferrer" className="hidden shrink-0 items-center gap-2 hover:text-cyan lg:flex">
+            <Phone className="h-4 w-4" strokeWidth={1.6} /> <bdi dir="ltr">WhatsApp</bdi>
+          </a>
         </div>
+
+        {/* Main nav */}
+        <header className="border-b border-border/70 bg-card/95 backdrop-blur-md">
+          <div className="mx-auto grid h-14 max-w-[1440px] grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 sm:h-16 sm:px-8">
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                aria-label={dict.header.menu}
+                onClick={() => setMenu(true)}
+                className="grid h-9 w-9 place-items-center rounded-full bg-secondary lg:hidden"
+              >
+                <Menu className="h-5 w-5" strokeWidth={1.6} />
+              </button>
+              <nav className="hidden items-center gap-8 lg:flex" aria-label="Main">
+                {NAV.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`link-underline py-2 text-[0.72rem] font-extrabold uppercase tracking-[0.11em] transition-colors hdr-link ${item.active ? 'text-coral' : 'text-foreground/75 hover:text-foreground'}`}
+                    aria-current={item.active ? 'page' : undefined}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+
+            <Link href={`/${locale}`} className="flex items-center justify-center" aria-label="Tiny Inks home">
+              <img src="/logo-icon.png" alt="Tiny Inks" width={44} height={44} className="h-11 w-11 object-contain sm:h-12 sm:w-12" />
+            </Link>
+
+            <div className="flex items-center justify-end gap-1 sm:gap-2">
+              <Link
+                href={`/${otherLocale}${rest}`}
+                aria-label="Language"
+                className="hidden items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[0.68rem] font-extrabold uppercase tracking-[0.1em] transition-colors hover:border-coral hover:text-coral sm:inline-flex"
+              >
+                <Globe className="h-4 w-4" strokeWidth={1.6} /> {otherLocale === 'ar' ? 'العربية' : 'English'}
+              </Link>
+              <Link href={`/${locale}/shop`} aria-label={dict.search.label} className="grid h-9 w-9 place-items-center rounded-full transition-colors hover:bg-secondary">
+                <Search className="h-[19px] w-[19px]" strokeWidth={1.6} />
+              </Link>
+              <Link
+                href={`/${locale}/wishlist`}
+                aria-label={`${dict.nav.wishlist} (${wishlist?.count || 0})`}
+                className="relative grid h-9 w-9 place-items-center rounded-full transition-colors hover:bg-secondary"
+              >
+                <Heart className="h-[19px] w-[19px]" strokeWidth={1.6} />
+                {wishlist?.count > 0 && (
+                  <span className="absolute -end-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-coral px-1 text-[0.6rem] font-extrabold text-white">
+                    {wishlist.count}
+                  </span>
+                )}
+              </Link>
+              <button
+                type="button"
+                onClick={() => cart?.setOpen(true)}
+                aria-label={`${dict.cart} (${cart?.count || 0})`}
+                className="relative grid h-9 w-9 place-items-center rounded-full transition-colors hover:bg-secondary"
+              >
+                <ShoppingBag className="h-[19px] w-[19px]" strokeWidth={1.6} />
+                <span className="absolute -end-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-coral px-1 text-[0.6rem] font-extrabold text-white">
+                  {cart?.count || 0}
+                </span>
+              </button>
+            </div>
+          </div>
+        </header>
       </div>
 
-      <header className={`header mk-header ${menu ? 'menu-open' : ''}`}>
-        <div className="wrap hdr-row">
-          <button
-            className="menu-toggle"
-            onClick={() => { setMenu(!menu); setSearchOpen(false); }}
-            aria-label={menu ? dict.header.closeMenu : dict.header.menu}
-            aria-expanded={menu}
-            aria-controls="site-menu"
-          >
-            {menu ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
-            )}
+      {/* Mobile full-screen menu */}
+      <div
+        id="site-menu"
+        className={`paper-fibre fixed inset-0 z-[60] flex flex-col overflow-y-auto overflow-x-clip bg-card transition-[opacity,visibility] duration-300 lg:hidden ${menu ? 'visible opacity-100' : 'invisible opacity-0'}`}
+        aria-hidden={!menu}
+      >
+        <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-sky/40 blur-3xl" />
+        <div aria-hidden="true" className="pointer-events-none absolute -left-24 top-1/3 h-56 w-56 rounded-full bg-coral/15 blur-3xl" />
+
+        <div className="relative mx-auto flex w-full max-w-lg items-center justify-between px-5 py-4">
+          <img src="/logo-icon.png" alt="Tiny Inks" width={44} height={44} className="h-11 w-11 object-contain" />
+          <button type="button" aria-label={dict.header.closeMenu} onClick={() => setMenu(false)} className="grid h-10 w-10 place-items-center rounded-full bg-secondary">
+            <X className="h-5 w-5" strokeWidth={1.6} />
           </button>
+        </div>
 
-          <Link href={`/${locale}`} className="brand" aria-label={dict.brand}>
-            <img src="/logo-icon.png" alt="" />
-            <span className="brand-name">Tiny Inks</span>
-          </Link>
-
-          <nav className="hdr-nav" aria-label="Main">
-            {NAV.map((n) => n.mega ? (
-              <span key={n.href} className={`mega-wrap ${megaOpen ? 'open' : ''}`} ref={megaRef}>
-                <Link href={n.href} className={`hdr-link ${n.active ? 'active' : ''}`} aria-current={n.active ? 'page' : undefined}>
-                  {n.label}
-                </Link>
-                <button
-                  className="mega-toggle"
-                  onClick={() => setMegaOpen((v) => !v)}
-                  aria-expanded={megaOpen}
-                  aria-label={`${n.label} — ${mm.byCategory}`}
-                  aria-controls="mega-panel"
-                >
-                  ▾
-                </button>
-                {/* Citron-style mega menu: 4 link columns + promo tile */}
-                <div className="mega" id="mega-panel" data-testid="mega-panel">
-                  <div className="wrap mega-inner">
-                    {groups.map((g) => (
-                      <div className="mega-col" key={g.key}>
-                        <h3>{g.title}</h3>
-                        {g.links.map((l) => linkOut(l))}
-                      </div>
-                    ))}
-                    <Link href={`/${locale}/bundles`} className="mega-promo" onClick={() => setMegaOpen(false)}>
-                      <img src="/products/gift-sets-bundles-2.webp" alt="" loading="lazy" />
-                      <span>
-                        <strong>{mm.promoTitle}</strong>
-                        <em>{mm.promoCta} →</em>
-                      </span>
-                    </Link>
-                  </div>
-                </div>
-              </span>
-            ) : (
-              <Link key={n.href} href={n.href} className={`hdr-link ${n.active ? 'active' : ''}`} aria-current={n.active ? 'page' : undefined}>
-                {n.label}
+        <div className="relative mx-auto mt-2 w-[calc(100%-2.5rem)] max-w-[472px]">
+          <div className="flex items-center gap-2 rounded-2xl border border-border/60 bg-card/80 p-1.5">
+            {['en', 'ar'].map((code) => (
+              <Link
+                key={code}
+                href={`/${code}${rest}`}
+                className={`flex-1 rounded-xl px-3 py-2.5 text-center text-xs font-extrabold uppercase tracking-[0.12em] transition-colors ${locale === code ? 'bg-ink text-white' : 'text-foreground/70'}`}
+              >
+                {code === 'en' ? 'English' : 'العربية'}
               </Link>
             ))}
-          </nav>
-
-          {searchForm('mk-search-desktop')}
-
-          <div className="header-actions">
-            <button
-              className={`icon-btn search-toggle ${searchOpen ? 'active' : ''}`}
-              onClick={() => { setSearchOpen((v) => !v); setMenu(false); }}
-              aria-label={dict.search.label}
-              aria-expanded={searchOpen}
-              aria-controls="site-search-row"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
-                <circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5 5" />
-              </svg>
-            </button>
-            <Link
-              href={`/${locale}/wishlist`}
-              className={`icon-btn ${is(`/${locale}/wishlist`) ? 'active' : ''}`}
-              aria-label={`${dict.nav.wishlist}${wishlist?.handles.length ? ` (${wishlist.handles.length})` : ''}`}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M12 21C7 16.5 3 13.2 3 9.3 3 6.9 4.9 5 7.3 5c1.7 0 3.3.9 4.7 2.8C13.4 5.9 15 5 16.7 5 19.1 5 21 6.9 21 9.3c0 3.9-4 7.2-9 11.7z" />
-              </svg>
-              {wishlist?.handles.length > 0 && <span className="cart-count">{wishlist.handles.length}</span>}
-            </Link>
-            <button className="icon-btn cart-btn-mk" onClick={() => cart.setOpen(true)} aria-label={`${dict.cart}${cart.count > 0 ? ` (${cart.count})` : ''}`}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M6 7h12l1.2 13H4.8L6 7z" /><path d="M9 10V6a3 3 0 0 1 6 0v4" />
-              </svg>
-              {cart.count > 0 && <span className="cart-count" key={cart.count}>{cart.count}</span>}
-            </button>
-            <Link href={`/${otherLocale}${rest}`} className="locale-btn hdr-locale" aria-label="Switch language">
-              {otherLocale === 'ar' ? 'العربية' : 'EN'}
-            </Link>
           </div>
         </div>
 
-        {/* phone search row */}
-        <div id="site-search-row" className={`hdr-search wrap ${searchOpen ? 'open' : ''}`} hidden={!searchOpen}>
-          {searchForm('mk-search-mobile', mobileInput)}
-        </div>
-
-        {/* backdrop behind the slide-in phone menu — click closes */}
-        <button
-          type="button"
-          className={`mk-backdrop ${menu ? 'open' : ''}`}
-          aria-hidden={!menu}
-          tabIndex={-1}
-          onClick={() => setMenu(false)}
-        />
-
-        {/* phone menu — 5 links + the Shop groups as accordions */}
-        <nav id="site-menu" className={`mk-drawer ${menu ? 'open' : ''}`} aria-label="Main" aria-hidden={!menu}>
-          {NAV.map((n) => (
-            <Link key={n.href} href={n.href} className={n.active ? 'active' : ''} aria-current={n.active ? 'page' : undefined} tabIndex={menu ? 0 : -1}>
-              {n.label}
+        <nav className="relative mx-auto mt-5 flex w-full max-w-lg flex-col gap-2.5 px-5" aria-label="Main">
+          {MENU_NAV.map(({ Icon, ...item }, i) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="group flex items-center gap-4 rounded-2xl border border-border/60 bg-card/80 px-4 py-3.5 shadow-[0_10px_30px_-22px_var(--ink)] transition-colors active:border-coral"
+              style={{
+                transitionDelay: `${i * 45}ms`,
+                transform: menu ? 'none' : 'translateY(16px)',
+                opacity: menu ? 1 : 0,
+                transitionProperty: 'transform, opacity',
+                transitionDuration: '500ms',
+                transitionTimingFunction: 'cubic-bezier(0.22,1,0.36,1)',
+              }}
+            >
+              <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${item.tint}`}>
+                <Icon className="h-5 w-5" strokeWidth={1.6} />
+              </span>
+              <span className="flex-1">
+                <span className="block font-display text-xl leading-tight">{item.label}</span>
+                <span className="block text-xs text-muted-foreground">{item.sub}</span>
+              </span>
+              <span aria-hidden="true" className="text-lg text-muted-foreground/50 transition-transform group-active:translate-x-1 rtl:rotate-180">→</span>
             </Link>
           ))}
-          <div className="drw-groups">
-            {groups.map((g) => (
-              <details className="drw-acc" key={g.key}>
-                <summary>{g.title}</summary>
-                <div className="drw-acc-links">
-                  {g.links.map((l) => linkOut(l, '', menu ? 0 : -1))}
-                </div>
-              </details>
+        </nav>
+
+        <div className="relative mx-auto mt-auto w-full max-w-lg px-5 pb-8 pt-8">
+          <div className="flex items-center justify-center gap-3">
+            {socials.map(({ Icon, label, href }) => (
+              <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label} className="grid h-11 w-11 place-items-center rounded-full border border-border bg-card transition-colors hover:border-coral hover:text-coral">
+                <Icon className="h-[18px] w-[18px]" strokeWidth={1.6} />
+              </a>
             ))}
           </div>
-          <div className="mk-drawer-foot">
-            <Link href={`/${otherLocale}${rest}`} className="locale-btn" tabIndex={menu ? 0 : -1}>
-              {otherLocale === 'ar' ? 'العربية' : 'English'}
-            </Link>
-            <Link href={`/${locale}/wishlist`} className="btn btn-ghost btn-sm" tabIndex={menu ? 0 : -1}>{dict.nav.wishlist}</Link>
-            <button className="btn btn-primary btn-sm" onClick={() => { setMenu(false); cart.setOpen(true); }} tabIndex={menu ? 0 : -1}>
-              {dict.cart}{cart.count > 0 ? ` (${cart.count})` : ''}
-            </button>
-          </div>
-        </nav>
-      </header>
+          {b.address && (
+            <div className="mt-5 flex flex-col items-center gap-1.5 text-center">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-foreground/70">
+                {b.address}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
     </>
   );
 }

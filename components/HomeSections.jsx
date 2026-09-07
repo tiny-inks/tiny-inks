@@ -93,7 +93,7 @@ export function BulkBand({ dict }) {
     <section className="section row-section">
       <div className="wrap">
         <Reveal>
-          <div className="block ink bulk-band">
+          <div className="content-block ink bulk-band">
             <div>
               <h2>{dict.bulkBand.title}</h2>
               <p className="bulk-lede">{dict.bulkBand.lede}</p>

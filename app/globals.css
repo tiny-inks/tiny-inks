@@ -1,5 +1,173 @@
-/* ============ Self-hosted fonts (no build-time Google Fonts fetch) ============
-   Same typefaces/weights as before; files in public/fonts. */
+/* =====================================================================
+   NEW BRAND (Lovable migration) — Tailwind v4 + Fredoka/Nunito/Cairo/Tajawal.
+   Google-Fonts-hosted for now (Lovable's own choice); the old self-hosted
+   Fraunces/Karla/El Messiri/Plex @font-face rules below are kept only so
+   anything not yet re-skinned (checkout/print/staff) still renders correctly
+   — they are unused by any new page and can be deleted once the whole site
+   is migrated.
+
+   NOTE: intentionally NOT `@import "tailwindcss"` — that bundles Preflight
+   (a CSS reset) which would strip the legacy classes below (buttons, forms,
+   Placeholder, checkout/print/staff) of their default box model. Importing
+   only the theme + utilities layers is Tailwind's documented approach for
+   retrofitting into an existing CSS codebase.
+
+   LAYER ORDER — do not add a standalone `@layer a, b, c;` statement to
+   control this: it gets silently dropped somewhere in Next.js's CSS build
+   pipeline (confirmed by inspecting the compiled stylesheet's actual
+   CSSLayerBlockRule order — no CSSLayerStatementRule survives at all). The
+   ONLY reliable lever is physical order of first appearance of each
+   `@layer name { ... }` BLOCK (or layered `@import`) in this file — the
+   LAST-appearing block wins. That's why `@import "tailwindcss/utilities"`
+   is at the very BOTTOM of this file instead of up here next to the theme
+   import: utilities must out-rank both `legacy` and `base` below, and this
+   is the only way that reliably held across rebuilds (an explicit order
+   statement did not: `.text-primary-foreground`/`.text-white` kept losing
+   to a bare `a{color:inherit}` even after declaring utilities last). */
+@import "tailwindcss/theme" layer(theme);
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 3px);
+  --radius-md: calc(var(--radius) - 1px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 10px);
+  --radius-3xl: calc(var(--radius) + 16px);
+  --radius-4xl: calc(var(--radius) + 24px);
+  /* aliased (not literal) so the LEGACY layer can't win this custom property
+     by redeclaring the same name at a nominally-higher layer priority — see
+     the --font-display/--font-sans primitives in the unlayered :root below */
+  --font-display: var(--font-display-value);
+  --font-sans: var(--font-sans-value);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-cream: var(--cream);
+  --color-sand: var(--sand);
+  --color-clay: var(--clay);
+  --color-terracotta: var(--terracotta);
+  --color-sage: var(--sage);
+  --color-denim: var(--denim);
+  --color-sky: var(--sky);
+  --color-sun: var(--sun);
+  --color-blush: var(--blush);
+  --color-ink: var(--ink);
+  --color-coral: var(--coral);
+  --color-cyan: var(--cyan);
+}
+
+:root {
+  --font-display-value: "Fredoka", ui-rounded, ui-sans-serif, system-ui, sans-serif;
+  --font-sans-value: "Nunito", ui-sans-serif, system-ui, sans-serif;
+  --radius: 1rem;
+  --cream: oklch(0.985 0.012 90);
+  --sand: oklch(0.965 0.012 300);
+  --clay: oklch(0.93 0.02 300);
+  --ink: oklch(0.31 0.075 255);
+  --coral: oklch(0.7 0.19 20);
+  --terracotta: var(--coral);
+  --cyan: oklch(0.85 0.09 210);
+  --sky: oklch(0.9 0.055 280);
+  --sage: oklch(0.87 0.08 160);
+  --denim: oklch(0.55 0.16 262);
+  --sun: oklch(0.92 0.13 96);
+  --blush: oklch(0.9 0.07 10);
+  --background: oklch(1 0 0);
+  --foreground: var(--ink);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--ink);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: var(--sand);
+  --secondary-foreground: var(--ink);
+  --muted: var(--sand);
+  --muted-foreground: oklch(0.53 0.025 260);
+  --accent: var(--coral);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.58 0.22 25);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.9 0.012 260);
+  --input: oklch(0.9 0.012 260);
+  --ring: var(--denim);
+  --shadow-soft: 0 12px 40px -22px oklch(0.19 0.025 265 / 0.22);
+  --shadow-lift: 0 28px 70px -30px oklch(0.19 0.025 265 / 0.35);
+  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@utility display-xl { font-family: var(--font-display); font-size: clamp(2.6rem, 6.5vw, 5rem); line-height: 1.02; font-weight: 600; }
+@utility display-lg { font-family: var(--font-display); font-size: clamp(2.1rem, 4.6vw, 3.6rem); line-height: 1.06; font-weight: 600; }
+@utility display-md { font-family: var(--font-display); font-size: clamp(1.6rem, 3vw, 2.6rem); line-height: 1.1; font-weight: 600; }
+/* named eyebrow-new / marquee-new (not eyebrow / marquee-track) — those bare
+   names are already legacy classes elsewhere in this file; being unlayered
+   plain CSS, they would silently win the cascade over any same-named
+   Tailwind @utility regardless of layer or source order. */
+@utility eyebrow-new { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--coral); }
+@utility label-xs { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.13em; text-transform: uppercase; color: var(--muted-foreground); }
+@utility paper-fibre {
+  background-image:
+    radial-gradient(circle at 18% 22%, color-mix(in oklab, var(--ink) 8%, transparent) 0 0.55px, transparent 0.75px),
+    radial-gradient(circle at 72% 64%, color-mix(in oklab, var(--card) 42%, transparent) 0 0.7px, transparent 0.9px),
+    repeating-linear-gradient(104deg, transparent 0 18px, color-mix(in oklab, var(--ink) 3%, transparent) 19px, transparent 20px 38px);
+  background-size: 17px 19px, 23px 29px, 100% 100%;
+}
+@utility pencil-grid {
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--ink) 4%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, var(--ink) 4%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 10% 15%, color-mix(in oklab, var(--coral) 9%, transparent) 0 1px, transparent 1.3px);
+  background-size: 28px 28px, 28px 28px, 37px 41px;
+}
+@utility link-underline {
+  position: relative;
+  &::after { content: ""; position: absolute; left: 0; bottom: -4px; height: 2px; width: 100%; background: var(--coral); transform: scaleX(0); transform-origin: right; transition: transform .4s var(--ease-brand); }
+  &:hover::after { transform: scaleX(1); transform-origin: left; }
+}
+@keyframes ti-marquee { to { transform: translateX(-50%); } }
+@utility marquee-new { animation: ti-marquee 28s linear infinite; will-change: transform; }
+@keyframes ti-fade { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@utility fade-up { animation: ti-fade .8s var(--ease-brand) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  body.brand-new *, body.brand-new *::before, body.brand-new *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+/* Arabic typography (RTL) for the new brand */
+[dir="rtl"] body.brand-new,
+[dir="rtl"] body.brand-new .font-sans { font-family: "Tajawal", "Nunito", ui-sans-serif, system-ui, sans-serif; }
+[dir="rtl"] body.brand-new h1,
+[dir="rtl"] body.brand-new h2,
+[dir="rtl"] body.brand-new h3,
+[dir="rtl"] body.brand-new .font-display,
+[dir="rtl"] body.brand-new .display-xl,
+[dir="rtl"] body.brand-new .display-lg,
+[dir="rtl"] body.brand-new .display-md {
+  font-family: "Cairo", "Fredoka", ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
+@layer legacy {
+/* ============ Legacy self-hosted fonts (pre-migration brand) ============
+   Still used by pages not yet re-skinned (checkout/print/staff). Safe to
+   delete once every page below is migrated off body:not(.brand-new). */
 @font-face {
   font-family: 'Fraunces'; font-style: normal; font-weight: 400 600; font-display: swap;
   src: url('/fonts/fraunces-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
@@ -68,16 +236,23 @@
   --slate: #5C6470; /* darkened from the logo's #6E7786 for WCAG AA small text */
   --line: rgba(38, 39, 43, 0.14);
 
-  --font-display: var(--f-fraunces), Georgia, serif;
-  --font-body: var(--f-karla), 'Segoe UI', sans-serif;
-
   --max: 1200px;
   --radius: 18px;
   --shadow: 0 18px 40px -22px rgba(38, 39, 43, 0.28);
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-[dir='rtl'] {
+/* scoped to body:not(.brand-new) rather than :root/[dir='rtl'] — these share
+   the --font-display/--font-body names with the new brand's tokens, and
+   relying on @layer priority between a hand-written layer and Tailwind's own
+   `@theme` block proved unreliable in practice (the new brand's tokens kept
+   losing regardless of declared layer order); scoping away from body.brand-new
+   sidesteps the cascade fight entirely. */
+body:not(.brand-new) {
+  --font-display: var(--f-fraunces), Georgia, serif;
+  --font-body: var(--f-karla), 'Segoe UI', sans-serif;
+}
+[dir='rtl'] body:not(.brand-new) {
   --font-display: var(--f-messiri), var(--f-plexar), serif;
   --font-body: var(--f-plexar), 'Segoe UI', sans-serif;
 }
@@ -95,7 +270,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 img { max-width: 100%; display: block; }
-a { color: inherit; text-decoration: none; }
+/* scoped away from body.brand-new — see the --font-display comment above for
+   why: relying on @layer priority against Tailwind utilities was unreliable
+   in practice, so new-brand pages just never see this rule at all. */
+body:not(.brand-new) a { color: inherit; text-decoration: none; }
 button { font-family: inherit; cursor: pointer; }
 ::selection { background: var(--mustard); color: var(--ink); }
 
@@ -673,10 +851,13 @@ h1 em, h2 em { color: var(--terracotta); }
 .chip.on { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .chip.color { display: inline-flex; align-items: center; gap: 8px; }
 .chip .swatch { width: 14px; height: 14px; border-radius: 99px; border: 1px solid rgba(0,0,0,0.12); }
-.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 12px; }
-@media (max-width: 1100px) { .grid { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 900px) { .grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 768px) { .grid { gap: 12px 10px; } }
+/* renamed from `.grid` — collided with Tailwind's `.grid` utility (now used
+   throughout the new brand's components): being unlayered plain CSS, it was
+   silently overriding every Tailwind grid-cols-*/gap-* utility site-wide. */
+.pgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 12px; }
+@media (max-width: 1100px) { .pgrid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 900px) { .pgrid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) { .pgrid { gap: 12px 10px; } }
 .shop-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 26px; flex-wrap: wrap; }
 .select {
   border: 1.5px solid var(--line); border-radius: 999px; padding: 10px 18px;
@@ -814,14 +995,18 @@ h1 em, h2 em { color: var(--terracotta); }
 .subtotal { display: flex; justify-content: space-between; font-weight: 800; font-size: 1.1rem; }
 .drawer-note { font-size: 0.82rem; color: var(--slate); text-align: center; }
 
-/* ---------- color-block sections ---------- */
-.block { border-radius: calc(var(--radius) * 1.6); padding: clamp(40px, 6vw, 80px); position: relative; overflow: hidden; }
-.block.blush { background: var(--blush); }
-.block.blue { background: var(--blue); }
-.block.cream { background: var(--cream); }
-.block.sage { background: var(--sage); color: #10312c; }
-.block.ink { background: var(--ink); color: var(--paper); }
-.block.ink h2 em { color: var(--mustard); }
+/* ---------- color-block sections ----------
+   NOTE: renamed from `.block` — that name collided with Tailwind's
+   `display:block` utility (now used throughout the new brand's components)
+   since this rule is unlayered plain CSS and unconditionally wins the
+   cascade over any layered Tailwind utility on the same element. */
+.content-block { border-radius: calc(var(--radius) * 1.6); padding: clamp(40px, 6vw, 80px); position: relative; overflow: hidden; }
+.content-block.blush { background: var(--blush); }
+.content-block.blue { background: var(--blue); }
+.content-block.cream { background: var(--cream); }
+.content-block.sage { background: var(--sage); color: #10312c; }
+.content-block.ink { background: var(--ink); color: var(--paper); }
+.content-block.ink h2 em { color: var(--mustard); }
 
 .manifesto { text-align: center; }
 .manifesto p {
@@ -833,7 +1018,7 @@ h1 em, h2 em { color: var(--terracotta); }
 /* ---------- countdown ---------- */
 .countdown { display: flex; gap: clamp(10px, 2vw, 22px); justify-content: center; }
 .count-cell { background: rgba(255,255,255,0.55); border-radius: 14px; padding: 14px 10px; min-width: clamp(64px, 9vw, 96px); text-align: center; }
-.block.ink .count-cell { background: rgba(251,240,228,0.12); }
+.content-block.ink .count-cell { background: rgba(251,240,228,0.12); }
 .count-num { font-family: var(--font-display); font-size: clamp(1.7rem, 4vw, 2.6rem); font-weight: 600; line-height: 1; }
 .count-label { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7; margin-top: 6px; font-weight: 800; }
 
@@ -2080,3 +2265,34 @@ h1 em, h2 em { color: var(--terracotta); }
   border-radius: var(--radius); text-align: center; padding: clamp(30px, 5vw, 52px);
 }
 .nl-band .inline-form { justify-content: center; }
+} /* end @layer legacy */
+
+/* `base` moved down here — AFTER `legacy` above — so its block appears later
+   in the file and therefore outranks it (see the LAYER ORDER note at the
+   top: appearance order of @layer BLOCKS is what actually controls priority
+   here, not a declared @layer statement). */
+@layer base {
+  html { scroll-behavior: smooth; }
+  body.brand-new {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  body.brand-new h1, body.brand-new h2, body.brand-new h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
+  body.brand-new ::selection { background: var(--coral); color: var(--card); }
+  /* Preflight-equivalent reset, scoped to the new brand only — skipping
+     Preflight entirely (see the note at the top of this file) means these
+     defaults don't exist anywhere else, so every plain <a>/<button> on a new
+     page would otherwise fall back to browser-default blue/underlined links
+     and native button chrome. */
+  body.brand-new a { color: inherit; text-decoration: none; }
+  body.brand-new button { font-family: inherit; color: inherit; cursor: pointer; background: none; border: none; padding: 0; text-align: inherit; }
+  body.brand-new ul, body.brand-new ol { list-style: none; margin: 0; padding: 0; }
+  body.brand-new input, body.brand-new textarea, body.brand-new select { font: inherit; color: inherit; }
+}
+
+/* Deliberately LAST in the file — see the LAYER ORDER note at the top.
+   Utilities must be the last @layer block to appear so it outranks both
+   `legacy` and `base` above in the compiled cascade. */
+@import "tailwindcss/utilities" layer(utilities);

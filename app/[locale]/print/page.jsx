@@ -10,28 +10,29 @@ export async function generateMetadata({ params }) {
   return { title: dict.print.title, description: dict.print.lede };
 }
 
-const TRUST_ICONS = ['⏱', '🏪', '🔒'];
-
 export default function PrintPage({ params }) {
   const locale = params.locale === 'ar' ? 'ar' : 'en';
   const dict = getDict(locale);
   const t = dict.print;
   return (
-    <section className="section print-section" style={{ paddingTop: 'clamp(18px, 3vw, 34px)' }}>
-      <div className="wrap">
-        <Breadcrumbs dict={dict} locale={locale} items={[{ label: t.title }]} />
-        <header className="print-head">
-          <div className="eyebrow">{t.eyebrow}</div>
-          <h1 style={{ fontSize: 'clamp(2rem, 4.5vw, 3.2rem)' }}>{t.headline}</h1>
-          <p className="lede">{t.lede}</p>
-          <ul className="trust-row" aria-label={t.trustLabel}>
+    <>
+      <section className="overflow-hidden bg-sage pb-10 pt-8 sm:pt-12">
+        <div className="mx-auto max-w-[1440px] px-5 sm:px-8">
+          <Breadcrumbs dict={dict} locale={locale} items={[{ label: t.title }]} />
+          <span className="eyebrow-new mt-4 text-ink/70">{t.eyebrow}</span>
+          <h1 className="display-xl mt-3 text-ink">{t.headline}</h1>
+          <p className="mt-4 max-w-lg text-sm leading-relaxed text-ink/75 sm:text-base">{t.lede}</p>
+          <ul aria-label={t.trustLabel} className="mt-6 flex flex-wrap gap-3">
             {t.trust.map((s, i) => (
-              <li key={i}><span aria-hidden="true">{TRUST_ICONS[i]}</span>{s.replace('{hours}', String(PRINT.pickup.readyInHours))}</li>
+              <li key={i} className="flex items-center gap-2 rounded-full bg-card/70 px-4 py-2 text-xs font-bold text-ink">{s.replace('{hours}', String(PRINT.pickup.readyInHours))}</li>
             ))}
           </ul>
-        </header>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-[1440px] px-5 pb-24 pt-10 sm:px-8 lg:pb-40">
         <PrintOrder dict={dict} locale={locale} live={isLive()} business={getBusiness()} />
-      </div>
-    </section>
+      </section>
+    </>
   );
 }

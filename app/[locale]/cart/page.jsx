@@ -1,4 +1,3 @@
-import Reveal from '@/components/Reveal';
 import CartPageClient from '@/components/CartPageClient';
 import Breadcrumbs from '@/components/Breadcrumbs';
 import { getDict } from '@/lib/dictionaries';
@@ -15,13 +14,11 @@ export default async function CartPage({ params }) {
   const collections = await getCollections(locale);
 
   return (
-    <section className="section" style={{ paddingTop: 'clamp(40px, 6vw, 70px)' }}>
-      <div className="wrap">
-        <Breadcrumbs dict={dict} locale={locale} items={[{ label: dict.cart }]} />
-        <Reveal>
-          <h1 style={{ fontSize: 'clamp(2rem, 4.5vw, 3.2rem)' }}>{dict.cart}</h1>
-          <p className="lede" style={{ marginBottom: 40 }}>{dict.cartPage.lede}</p>
-        </Reveal>
+    <section className="mx-auto max-w-[1240px] px-4 py-10 sm:px-8 sm:py-16">
+      <Breadcrumbs dict={dict} locale={locale} items={[{ label: dict.cart }]} />
+      <h1 className="display-lg mt-4">{dict.cart}</h1>
+      <p className="mt-2 max-w-lg text-sm text-muted-foreground">{dict.cartPage.lede}</p>
+      <div className="mt-10">
         <CartPageClient dict={dict} locale={locale} collections={collections} />
       </div>
     </section>

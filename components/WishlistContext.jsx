@@ -28,7 +28,7 @@ export function WishlistProvider({ children }) {
 
   const has = useCallback((handle) => handles.includes(handle), [handles]);
 
-  return <WishCtx.Provider value={{ handles, toggle, has }}>{children}</WishCtx.Provider>;
+  return <WishCtx.Provider value={{ handles, toggle, has, count: handles.length }}>{children}</WishCtx.Provider>;
 }
 
 export const useWishlist = () => useContext(WishCtx);

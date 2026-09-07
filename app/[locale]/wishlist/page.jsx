@@ -14,10 +14,10 @@ export default async function WishlistPage({ params }) {
   const [products, collections] = await Promise.all([getProducts(locale), getCollections(locale)]);
 
   return (
-    <section className="section" style={{ paddingTop: 'clamp(24px, 4vw, 44px)' }}>
-      <div className="wrap">
-        <Breadcrumbs dict={dict} locale={locale} items={[{ label: dict.nav.wishlist }]} />
-        <h1 className="shop-h1" style={{ marginBottom: 22 }}>{dict.nav.wishlist}</h1>
+    <section className="mx-auto max-w-[1440px] px-4 pb-24 pt-8 sm:px-8 sm:pt-12">
+      <Breadcrumbs dict={dict} locale={locale} items={[{ label: dict.nav.wishlist }]} />
+      <h1 className="display-lg mt-4">{dict.nav.wishlist}</h1>
+      <div className="mt-10">
         <WishlistClient products={products} dict={dict} locale={locale} collections={collections} />
       </div>
     </section>

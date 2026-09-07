@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { ArrowRight, Search, SlidersHorizontal, X } from 'lucide-react';
 import ProductCard from './ProductCard';
 import EmptyState from './EmptyState';
 import { assignGridImages } from '@/lib/product-images';
@@ -16,7 +17,6 @@ export default function ShopClient({
   collections = [],
   currentCollection = null,
   collectionTitle = null,
-  showCategoriesLink = false,
 }) {
   const t = dict.shop;
   const tu = dict.shopUi;
@@ -82,10 +82,7 @@ export default function ShopClient({
     return [...seen.entries()].map(([key, v]) => ({ key, label: v.label, count: v.count }));
   }, [products]);
 
-  const colors = useMemo(
-    () => [...new Set(products.map((p) => p.color).filter(Boolean))],
-    [products]
-  );
+  const colors = useMemo(() => [...new Set(products.map((p) => p.color).filter(Boolean))], [products]);
   const colorLabel = (c) => (COLOR_NAMES[locale] && COLOR_NAMES[locale][c]) || c;
   const brands = useMemo(() => {
     const m = new Map();
@@ -112,9 +109,7 @@ export default function ShopClient({
     if (sort === 'high') list = [...list].sort((a, b) => b.price - a.price);
     if (sort === 'new') list = [...list].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     if (sort === 'featured') {
-      list = [...list].sort(
-        (a, b) => (b.tags?.includes('bestseller') ? 1 : 0) - (a.tags?.includes('bestseller') ? 1 : 0)
-      );
+      list = [...list].sort((a, b) => (b.tags?.includes('bestseller') ? 1 : 0) - (a.tags?.includes('bestseller') ? 1 : 0));
     }
     return list;
   }, [products, type, color, brand, minP, maxP, inStockOnly, sort, query]);
@@ -138,184 +133,172 @@ export default function ShopClient({
     setInStockOnly(false);
   };
 
-  const applyPrice = (e) => {
-    e.preventDefault();
-    setMinP(minDraft);
-    setMaxP(maxDraft);
-  };
+  const applyPrice = (e) => { e.preventDefault(); setMinP(minDraft); setMaxP(maxDraft); };
 
-  const sidebar = (
-    <aside className={`filters ${panelOpen ? 'open' : ''}`} aria-label={t.filters}>
-      <div className="filter-group">
-        <h4>{tu.categories}</h4>
-        <div className="cat-list">
-          {/* collection links — driven by Shopify (demo: mock categories) */}
-          <Link href={`/${locale}/shop`} className={`cat-link ${!currentCollection ? 'on' : ''}`} aria-current={!currentCollection ? 'page' : undefined}>
-            {t.all}
-          </Link>
+  const FilterGroup = ({ title, children }) => (
+    <div>
+      <h3 className="eyebrow-new">{title}</h3>
+      <div className="mt-4">{children}</div>
+    </div>
+  );
+
+  const catLink = (active) => `flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-start text-sm font-semibold transition-colors duration-300 ${active ? 'bg-ink text-white' : 'text-foreground/75 hover:bg-secondary'}`;
+
+  const filterPanel = (
+    <div className="grid gap-8">
+      <FilterGroup title={tu.categories}>
+        <div className="space-y-2">
+          <Link href={`/${locale}/shop`} className={catLink(!currentCollection)} aria-current={!currentCollection ? 'page' : undefined}>{t.all}</Link>
           {collections.map((c) => (
-            <Link
-              key={c.handle}
-              href={`/${locale}/shop/${c.handle}`}
-              className={`cat-link ${currentCollection === c.handle ? 'on' : ''}`}
-              aria-current={currentCollection === c.handle ? 'page' : undefined}
-            >
-              {c.title} {typeof c.count === 'number' ? <span>{c.count}</span> : null}
+            <Link key={c.handle} href={`/${locale}/shop/${c.handle}`} className={catLink(currentCollection === c.handle)} aria-current={currentCollection === c.handle ? 'page' : undefined}>
+              <span>{c.title}</span>{typeof c.count === 'number' ? <span className="text-xs opacity-70">{c.count}</span> : null}
             </Link>
           ))}
         </div>
-      </div>
+      </FilterGroup>
 
-      <div className="filter-group">
-        <h4>{tu.priceRange}</h4>
-        <form className="price-form" onSubmit={applyPrice}>
-          <input
-            type="number" inputMode="numeric" min="0" className="input"
-            placeholder={tu.min} value={minDraft} onChange={(e) => setMinDraft(e.target.value)}
-            aria-label={tu.min}
-          />
+      <FilterGroup title={tu.priceRange}>
+        <form onSubmit={applyPrice} className="flex items-center gap-2">
+          <input type="number" inputMode="numeric" min="0" placeholder={tu.min} value={minDraft} onChange={(e) => setMinDraft(e.target.value)} aria-label={tu.min} className="min-w-0 flex-1 rounded-xl border-2 border-border bg-card px-3 py-2 text-sm outline-none focus:border-coral" />
           <span aria-hidden="true">–</span>
-          <input
-            type="number" inputMode="numeric" min="0" className="input"
-            placeholder={tu.max} value={maxDraft} onChange={(e) => setMaxDraft(e.target.value)}
-            aria-label={tu.max}
-          />
-          <button type="submit" className="btn btn-ink btn-sm">{tu.apply}</button>
+          <input type="number" inputMode="numeric" min="0" placeholder={tu.max} value={maxDraft} onChange={(e) => setMaxDraft(e.target.value)} aria-label={tu.max} className="min-w-0 flex-1 rounded-xl border-2 border-border bg-card px-3 py-2 text-sm outline-none focus:border-coral" />
+          <button type="submit" className="shrink-0 rounded-full bg-ink px-4 py-2 text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-white">{tu.apply}</button>
         </form>
-      </div>
+      </FilterGroup>
 
       {brands.length > 1 && (
-        <div className="filter-group">
-          <h4>{tu.brand}</h4>
-          <div className="cat-list">
-            <button className={`cat-link ${brand === 'all' ? 'on' : ''}`} onClick={() => setBrand('all')}>{t.all}</button>
+        <FilterGroup title={tu.brand}>
+          <div className="space-y-2">
+            <button type="button" className={catLink(brand === 'all')} onClick={() => setBrand('all')}>{t.all}</button>
             {brands.map((b) => (
-              <button key={b.name} className={`cat-link ${brand === b.name ? 'on' : ''}`} onClick={() => setBrand(b.name)}>
-                {b.name} <span>{b.count}</span>
+              <button key={b.name} type="button" className={catLink(brand === b.name)} onClick={() => setBrand(b.name)}>
+                <span>{b.name}</span><span className="text-xs opacity-70">{b.count}</span>
               </button>
             ))}
           </div>
-        </div>
+        </FilterGroup>
       )}
 
       {colors.length > 0 && (
-        <div className="filter-group">
-          <h4>{t.color}</h4>
-          <div className="swatch-row">
+        <FilterGroup title={t.color}>
+          <div className="flex flex-wrap gap-2">
             {colors.map((c) => (
               <button
                 key={c}
-                className={`swatch-btn ${color === c ? 'on' : ''}`}
-                style={{ background: COLOR_SWATCHES[c] || '#ccc' }}
+                type="button"
                 onClick={() => setColor(color === c ? 'all' : c)}
                 aria-label={colorLabel(c)}
                 aria-pressed={color === c}
                 title={colorLabel(c)}
+                style={{ background: COLOR_SWATCHES[c] || '#ccc' }}
+                className={`h-8 w-8 rounded-full border-2 transition-transform ${color === c ? 'scale-110 border-ink' : 'border-border hover:scale-105'}`}
               />
             ))}
           </div>
-        </div>
+        </FilterGroup>
       )}
 
-      <div className="filter-group">
-        <label className="avail-toggle">
-          <input
-            type="checkbox"
-            checked={inStockOnly}
-            onChange={(e) => setInStockOnly(e.target.checked)}
-          />
-          {tu.availability}
-        </label>
-      </div>
-
-      <button className="btn btn-primary sheet-apply" onClick={() => setPanelOpen(false)}>
-        {t.show} {filtered.length} {t.results} ✦
-      </button>
-    </aside>
+      <label className="flex cursor-pointer items-center gap-2.5 text-sm font-semibold">
+        <input type="checkbox" checked={inStockOnly} onChange={(e) => setInStockOnly(e.target.checked)} className="h-4 w-4 accent-coral" />
+        {tu.availability}
+      </label>
+    </div>
   );
 
   const gridImages = assignGridImages(shown);
 
   return (
-    <div>
-
-      {/* count + sort + per-page on one line */}
-      <div className="shop-toolbar">
-        <span className="result-count" aria-live="polite">
-          <strong>{filtered.length}</strong> {tu.itemsIn} {collectionTitle || tu.breadcrumbShop}
-        </span>
-        <div className="toolbar-actions">
-          {showCategoriesLink && (
-            <a href="#categories" className="chip cats-link">
-              <span aria-hidden="true">↑</span> {t.backToCategories}
-            </a>
+    <div className="grid gap-12 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-14">
+      <aside className="hidden lg:block">
+        <div className="sticky top-28 rounded-3xl border border-border bg-card p-6">
+          {filterPanel}
+          {chips.length > 0 && (
+            <button type="button" onClick={clearAll} className="mt-8 text-[0.7rem] font-extrabold uppercase tracking-[0.14em] underline underline-offset-4">{tu.clearAll} ({chips.length})</button>
           )}
-          <label className="perpage-label">
-            {tu.perPage}
-            <select className="select" value={perPage} onChange={(e) => setPerPage(Number(e.target.value))}>
-              {PER_PAGE_OPTIONS.map((n) => (
-                <option key={n} value={n}>{n}</option>
-              ))}
+        </div>
+      </aside>
+
+      <div>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+          <p className="label-xs"><strong className="text-foreground">{filtered.length}</strong> {tu.itemsIn} {collectionTitle || tu.breadcrumbShop}</p>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={() => setPanelOpen(true)} className="flex items-center gap-2 rounded-full border border-border px-3 py-2 text-[0.7rem] font-extrabold uppercase tracking-[0.1em] transition-colors hover:bg-secondary lg:hidden">
+              <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.6} /> {t.filters}{chips.length ? ` (${chips.length})` : ''}
+            </button>
+            <label className="hidden items-center gap-2 text-[0.7rem] font-extrabold uppercase tracking-[0.12em] sm:flex">
+              {tu.perPage}
+              <select value={perPage} onChange={(e) => setPerPage(Number(e.target.value))} className="rounded-full border border-border bg-card px-3 py-2 text-[0.7rem] uppercase tracking-[0.1em] outline-none focus:border-coral">
+                {PER_PAGE_OPTIONS.map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </label>
+            <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label={t.sort} className="rounded-full border border-border bg-card px-3 py-2 text-[0.7rem] font-extrabold uppercase tracking-[0.1em] outline-none focus:border-coral">
+              <option value="featured">{t.sortFeatured}</option>
+              <option value="new">{t.sortNew}</option>
+              <option value="low">{t.sortLow}</option>
+              <option value="high">{t.sortHigh}</option>
             </select>
-          </label>
-          <select className="select" value={sort} onChange={(e) => setSort(e.target.value)} aria-label={t.sort}>
-            <option value="featured">{t.sortFeatured}</option>
-            <option value="new">{t.sortNew}</option>
-            <option value="low">{t.sortLow}</option>
-            <option value="high">{t.sortHigh}</option>
-          </select>
-          <button
-            className={`filters-toggle chip ${chips.length ? 'on' : ''}`}
-            onClick={() => setPanelOpen(true)}
-            aria-expanded={panelOpen}
-          >
-            {t.filters}{chips.length ? ` · ${chips.length}` : ''}
-          </button>
+          </div>
+        </div>
+
+        {chips.length > 0 && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {chips.map((c, i) => (
+              <button key={i} type="button" onClick={c.clear} aria-label={`${tu.remove}: ${c.label}`} className="flex items-center gap-1.5 rounded-full bg-ink px-4 py-2 text-xs font-bold text-white">
+                {c.label} <X className="h-3 w-3" />
+              </button>
+            ))}
+            <button type="button" onClick={clearAll} className="rounded-full border border-border px-4 py-2 text-xs font-bold">{tu.clearAll}</button>
+          </div>
+        )}
+
+        {filtered.length === 0 ? (
+          <div className="py-16">
+            <EmptyState dict={dict} locale={locale} collections={collections} title={t.emptyTitle} action={<button type="button" onClick={clearAll} className="rounded-full bg-ink px-6 py-3 text-xs font-extrabold uppercase tracking-[0.1em] text-white">{tu.clearAll}</button>} />
+          </div>
+        ) : (
+          <>
+            <div className="mt-10 grid grid-cols-2 gap-5 sm:gap-7 lg:grid-cols-3">
+              {shown.map((p, i) => (
+                <ProductCard key={p.id} product={p} locale={locale} dict={dict} image={gridImages[p.handle]} index={i} />
+              ))}
+            </div>
+            {visible < filtered.length && (
+              <div className="mt-12 flex flex-col items-center gap-3">
+                <p className="label-xs">{shown.length} {tu.of} {filtered.length}</p>
+                <button type="button" onClick={() => setVisible((v) => v + perPage)} className="rounded-full border-[1.5px] border-ink px-8 py-3.5 text-[0.72rem] font-extrabold uppercase tracking-[0.12em] transition-colors hover:bg-ink hover:text-white">
+                  {tu.loadMore}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        <div className="mt-20 overflow-hidden rounded-3xl bg-cyan">
+          <div className="grid items-center gap-8 p-8 sm:grid-cols-[1fr_auto] sm:p-12">
+            <div>
+              <span className="eyebrow-new text-ink/70">{dict.bulkBand.title}</span>
+              <p className="display-md mt-3 text-ink">{dict.bulkBand.lede}</p>
+            </div>
+            <a href="#" className="inline-flex items-center gap-2 rounded-full bg-ink px-7 py-4 text-[0.72rem] font-extrabold uppercase tracking-[0.12em] text-white transition-transform hover:scale-[1.03]">
+              {dict.bulkBand.cta} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+            </a>
+          </div>
         </div>
       </div>
 
-      {/* active filter chips */}
-      {chips.length > 0 && (
-        <div className="active-chips">
-          {chips.map((c, i) => (
-            <button key={i} className="chip on chip-x" onClick={c.clear} aria-label={`${tu.remove}: ${c.label}`}>
-              {c.label} <span aria-hidden="true">×</span>
-            </button>
-          ))}
-          <button className="chip" onClick={clearAll}>{tu.clearAll}</button>
-        </div>
-      )}
-
-      <div className="shop-layout">
-        <div className={`sheet-veil ${panelOpen ? 'open' : ''}`} onClick={() => setPanelOpen(false)} />
-        {sidebar}
-
-        <div>
-          {filtered.length === 0 ? (
-            <EmptyState
-              dict={dict}
-              locale={locale}
-              collections={collections}
-              title={t.emptyTitle}
-              action={<button className="btn btn-sm" onClick={clearAll}>{tu.clearAll}</button>}
-            />
-          ) : (
-            <>
-              <div className="grid">
-                {shown.map((p) => (
-                  <ProductCard key={p.id} product={p} locale={locale} dict={dict} image={gridImages[p.handle]} />
-                ))}
-              </div>
-              {visible < filtered.length && (
-                <div className="load-more">
-                  <span className="result-count">{shown.length} {tu.of} {filtered.length}</span>
-                  <button className="btn" onClick={() => setVisible((v) => v + perPage)}>
-                    {tu.loadMore}
-                  </button>
-                </div>
-              )}
-            </>
-          )}
+      {/* Mobile filter sheet */}
+      <div className={`fixed inset-0 z-[75] lg:hidden ${panelOpen ? 'visible' : 'invisible pointer-events-none'}`}>
+        <div onClick={() => setPanelOpen(false)} className={`absolute inset-0 bg-ink/30 transition-opacity duration-400 ${panelOpen ? 'opacity-100' : 'opacity-0'}`} />
+        <div className={`absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-3xl bg-card p-6 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${panelOpen ? 'translate-y-0' : 'translate-y-full'}`}>
+          <div className="flex items-center justify-between pb-6">
+            <span className="eyebrow-new">{t.filters}</span>
+            <button type="button" onClick={() => setPanelOpen(false)} aria-label="Close"><X className="h-5 w-5" strokeWidth={1.6} /></button>
+          </div>
+          {filterPanel}
+          <div className="mt-8 flex gap-3">
+            <button type="button" onClick={clearAll} className="flex-1 rounded-full border-2 border-border py-4 text-[0.7rem] font-extrabold uppercase tracking-[0.12em] transition-colors hover:border-ink">{tu.clearAll}</button>
+            <button type="button" onClick={() => setPanelOpen(false)} className="flex-1 rounded-full bg-ink py-4 text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-white transition-colors hover:bg-coral">{t.show} {filtered.length}</button>
+          </div>
         </div>
       </div>
     </div>

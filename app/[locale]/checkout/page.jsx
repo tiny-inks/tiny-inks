@@ -13,13 +13,11 @@ export default function CheckoutPage({ params }) {
   const locale = params.locale === 'ar' ? 'ar' : 'en';
   const dict = getDict(locale);
   return (
-    <section className="section print-section" style={{ paddingTop: 'clamp(18px, 3vw, 34px)' }}>
-      <div className="wrap">
-        <Breadcrumbs dict={dict} locale={locale} items={[{ href: `/${locale}/cart`, label: dict.cart }, { label: dict.checkout.title }]} />
-        <header className="print-head" style={{ marginBottom: 14 }}>
-          <h1 style={{ fontSize: 'clamp(1.9rem, 4vw, 2.8rem)' }}>{dict.checkout.title}</h1>
-          <p className="lede">{dict.checkout.lede}</p>
-        </header>
+    <section className="mx-auto max-w-[1440px] px-5 pb-24 pt-8 sm:px-8 sm:pt-12 lg:pb-40">
+      <Breadcrumbs dict={dict} locale={locale} items={[{ href: `/${locale}/cart`, label: dict.cart }, { label: dict.checkout.title }]} />
+      <h1 className="display-lg mt-4">{dict.checkout.title}</h1>
+      <p className="mt-2 max-w-lg text-sm text-muted-foreground">{dict.checkout.lede}</p>
+      <div className="mt-10">
         <Suspense fallback={null}>
           <CheckoutClient dict={dict} locale={locale} business={getBusiness()} />
         </Suspense>

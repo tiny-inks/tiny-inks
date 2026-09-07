@@ -1,8 +1,6 @@
 import { Suspense } from 'react';
 import ShopClient from '@/components/ShopClient';
 import SkeletonGrid from '@/components/SkeletonGrid';
-import CollectionGrid from '@/components/CollectionGrid';
-import Breadcrumbs from '@/components/Breadcrumbs';
 import { getDict } from '@/lib/dictionaries';
 import { getProducts, getCollections } from '@/lib/products';
 
@@ -14,10 +12,7 @@ export async function generateMetadata({ params }) {
 export default async function ShopPage({ params }) {
   const locale = params.locale === 'ar' ? 'ar' : 'en';
   const dict = getDict(locale);
-  const [products, collections] = await Promise.all([
-    getProducts(locale),
-    getCollections(locale),
-  ]);
+  const [products, collections] = await Promise.all([getProducts(locale), getCollections(locale)]);
   /* SAFETY NET: this page always lists getProducts() — every product,
      whether or not it belongs to any collection. Counts are informational. */
   const withCounts = collections.map((c) => ({
@@ -26,26 +21,25 @@ export default async function ShopPage({ params }) {
   }));
 
   return (
-    <section className="section" style={{ paddingTop: 'clamp(18px, 3vw, 34px)' }}>
-      <div className="wrap">
-        <Breadcrumbs dict={dict} locale={locale} items={[{ label: dict.nav.shop }]} />
-        <h1 className="shop-h1">{dict.shop.title}</h1>
-        <p className="shop-lede">{dict.shop.categoriesLede}</p>
+    <>
+      <section className="overflow-hidden bg-sky py-10 sm:py-12">
+        <div className="mx-auto max-w-[1440px] px-5 sm:px-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl">
+              <span className="eyebrow-new text-ink/70">{dict.shop.title}</span>
+              <h1 className="display-lg mt-3 text-ink">{dict.shop.title}</h1>
+              <p className="mt-3 max-w-lg text-sm leading-relaxed text-ink/75 sm:text-base">{dict.shop.lede}</p>
+            </div>
+            <div className="hidden h-16 w-16 shrink-0 rounded-full bg-sun lg:block" />
+          </div>
+        </div>
+      </section>
 
-        {/* the customer picks a category right here, above the products */}
-        <CollectionGrid collections={withCounts} locale={locale} dict={dict} />
-
-        <h2 className="shop-h2" id="all-products">{dict.nav.allProducts}</h2>
+      <section className="mx-auto max-w-[1440px] px-5 py-10 sm:px-8 lg:py-16">
         <Suspense fallback={<SkeletonGrid />}>
-          <ShopClient
-            products={products}
-            dict={dict}
-            locale={locale}
-            collections={withCounts}
-            showCategoriesLink
-          />
+          <ShopClient products={products} dict={dict} locale={locale} collections={withCounts} />
         </Suspense>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }

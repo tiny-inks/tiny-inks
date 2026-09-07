@@ -1,83 +1,89 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
+import { Eye, Heart } from 'lucide-react';
 import { useCart } from './CartContext';
 import { useWishlist } from './WishlistContext';
 import Placeholder from './Placeholder';
 import { formatPrice } from '@/lib/products';
 import { productImage } from '@/lib/product-images';
-import { COLOR_SWATCHES } from '@/lib/mock-data';
 
 const NEW_DAYS = 45;
 
-/* Photo-led card: square image is the hero (~70% of the card), then a 2-line
-   name, then a bold price with the round quick-add beside it. Nothing else —
-   the only badge is Sold out; the heart lives on the photo. */
-export default function ProductCard({ product, locale, dict, image }) {
+/* Lovable-style card: square photo, brand line, title, one-line blurb, price
+   + full-width pill "Add to bag". NEW badge from real recency/tag data only —
+   never invented. */
+export default function ProductCard({ product, locale, dict, image, index = 0 }) {
   const cart = useCart();
   const wishlist = useWishlist();
   const [added, setAdded] = useState(false);
-  /* real Shopify image → category photo → coloured placeholder */
   const img = image || productImage(product);
   const href = `/${locale}/product/${product.handle}`;
   const saved = wishlist?.has(product.handle);
   const canAdd = product.available && product.variantId;
   const isNew = product.available && (product.tags?.includes('new')
     || (product.createdAt && (Date.now() - new Date(product.createdAt).getTime()) < NEW_DAYS * 86400 * 1000));
-  const swatch = product.color ? COLOR_SWATCHES[product.color] : null;
+  const isBulk = product.tags?.includes('bulk');
 
   return (
-    <div className={`mcard ${!product.available ? 'is-soldout' : ''}`}>
-      <div className="mcard-media">
-        <Link href={href} className="card-media-link" aria-label={product.title} tabIndex={-1}>
+    <article
+      className="group flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card p-2.5 transition-all duration-500 hover:-translate-y-1 hover:border-ink hover:shadow-[0_18px_40px_-24px_rgba(30,45,90,0.45)] sm:p-3"
+      style={{ transitionDelay: `${(index % 4) * 60}ms` }}
+    >
+      <div className="relative block overflow-hidden rounded-2xl bg-secondary">
+        <Link href={href} aria-label={product.title} className="block">
           {img?.url ? (
-            <img className={`main ${img.fallback ? 'is-fallback' : ''}`} src={img.url} alt={product.title} loading="lazy" />
+            <img
+              className={`aspect-square w-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.05] ${img.fallback ? 'is-fallback' : ''}`}
+              src={img.url}
+              alt={product.title}
+              loading="lazy"
+            />
           ) : (
             <Placeholder handle={product.handle} title={product.title} label={dict.cartUi.noImage} />
           )}
         </Link>
+        {!product.available && (
+          <span className="absolute start-2.5 top-2.5 rounded-full bg-ink/80 px-2.5 py-1 text-[0.58rem] font-extrabold uppercase tracking-[0.12em] text-white">{dict.product.soldout}</span>
+        )}
+        {isNew && product.available && (
+          <span className="absolute start-2.5 top-2.5 rounded-full bg-sun px-2.5 py-1 text-[0.58rem] font-extrabold uppercase tracking-[0.12em] text-ink">{dict.product.newBadge}</span>
+        )}
+        {isBulk && (
+          <span className="absolute end-2.5 top-12 rounded-full bg-sage px-2.5 py-1 text-[0.58rem] font-extrabold uppercase tracking-[0.12em] text-ink">{dict.priceRow.title}</span>
+        )}
         <button
-          className={`wish-btn ${saved ? 'on' : ''}`}
-          onClick={() => wishlist?.toggle(product.handle)}
+          type="button"
           aria-label={saved ? dict.product.wishlistRemove : dict.product.wishlistAdd}
           aria-pressed={!!saved}
+          onClick={() => wishlist?.toggle(product.handle)}
+          className={`absolute end-2.5 top-2.5 z-10 grid h-8 w-8 place-items-center rounded-full shadow-sm transition-all duration-300 active:scale-90 ${saved ? 'bg-coral text-white' : 'bg-card/95 text-foreground/70 hover:text-coral'}`}
         >
-          <svg width="17" height="17" viewBox="0 0 24 24" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M12 21C7 16.5 3 13.2 3 9.3 3 6.9 4.9 5 7.3 5c1.7 0 3.3.9 4.7 2.8C13.4 5.9 15 5 16.7 5 19.1 5 21 6.9 21 9.3c0 3.9-4 7.2-9 11.7z" />
-          </svg>
+          <Heart className={`h-4 w-4 ${saved ? 'fill-current' : ''}`} strokeWidth={1.8} />
         </button>
-        {!product.available && <span className="badge soldout">{dict.product.soldout}</span>}
-        {isNew && <span className="badge new">{dict.product.newBadge}</span>}
+        <Link
+          href={href}
+          className="pointer-events-none absolute inset-x-2.5 bottom-2.5 flex items-center justify-center gap-2 rounded-full bg-card/95 py-2 text-[0.62rem] font-extrabold uppercase tracking-[0.12em] opacity-0 shadow transition-all duration-300 group-hover:opacity-100 max-sm:opacity-100"
+        >
+          <Eye className="h-3.5 w-3.5" /> {dict.product.details}
+        </Link>
       </div>
-      <div className="mcard-info">
-        {product.vendor ? <span className="mcard-brand">{product.vendor}</span> : null}
-        <Link href={href} className="mcard-title">{product.title}</Link>
-        <div className="mcard-foot">
-          <span className="mcard-price">{formatPrice(product.price, product.currency, locale)}</span>
-          {canAdd ? (
-            <button
-              className={`quick-add-btn ${added ? 'ok' : ''}`}
-              onClick={() => {
-                cart.add(product, 1);
-                setAdded(true);
-                setTimeout(() => setAdded(false), 1500);
-              }}
-              aria-label={`${dict.product.add}: ${product.title}`}
-            >
-              {added ? (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11" /></svg>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-              )}
-            </button>
-          ) : null}
-        </div>
-        {swatch && (
-          <span className="mcard-swatches" aria-hidden="true">
-            <i style={{ background: swatch }} />
-          </span>
-        )}
+      <div className="flex flex-1 flex-col px-1.5 pb-1 pt-3 text-center">
+        {product.vendor && <span className="label-xs">{product.vendor}</span>}
+        <Link href={href} className="mt-1 font-display text-[0.98rem] leading-tight transition-colors hover:text-coral sm:text-lg">
+          {product.title}
+        </Link>
+        <span className="mt-2 font-display text-base font-semibold tabular-nums">{formatPrice(product.price, product.currency, locale)}</span>
+        {canAdd ? (
+          <button
+            type="button"
+            onClick={() => { cart.add(product, 1); setAdded(true); setTimeout(() => setAdded(false), 1500); }}
+            className={`mt-3 w-full rounded-full border-[1.5px] py-2.5 text-[0.68rem] font-extrabold uppercase tracking-[0.12em] transition-colors duration-300 ${added ? 'border-sage bg-sage text-ink' : 'border-ink hover:bg-ink hover:text-white'}`}
+          >
+            {added ? dict.product.added : dict.product.add}
+          </button>
+        ) : null}
       </div>
-    </div>
+    </article>
   );
 }
