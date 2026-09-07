@@ -16,6 +16,15 @@ const PHONE_RE = /^[+\d][\d\s()-]{6,}$/;
 const fmt = (fils, locale, currency = 'AED') =>
   new Intl.NumberFormat(locale === 'ar' ? 'ar-AE' : 'en-AE', { style: 'currency', currency, minimumFractionDigits: 2 }).format((fils || 0) / 100);
 
+/* shared by the card element and the express (wallet) element so both match
+   the site's brand rather than Stripe's defaults */
+const STRIPE_APPEARANCE = {
+  variables: {
+    colorPrimary: '#fe626c', colorText: '#133155', colorBackground: '#ffffff',
+    borderRadius: '16px', fontFamily: 'inherit',
+  },
+};
+
 let stripeJsPromise = null;
 function loadStripeJs() {
   if (window.Stripe) return Promise.resolve(window.Stripe);
@@ -67,7 +76,13 @@ export default function CheckoutClient({ dict, locale, business }) {
   const [payError, setPayError] = useState('');
   const [stripeReady, setStripeReady] = useState(false);
   const [stripeMounted, setStripeMounted] = useState(false);
+  const [expressAvailable, setExpressAvailable] = useState(false);
   const stripeRef = useRef({});
+  const expressRef = useRef({});
+  /* The express-checkout handlers are registered once at mount, so they would
+     otherwise close over the first render's state. Everything they read comes
+     from here instead, refreshed on every render. */
+  const liveRef = useRef({});
 
   const d = cart.delivery;
   useEffect(() => { if (d.email && !email) setEmail(d.email); }, [d.email]); // eslint-disable-line
@@ -143,6 +158,151 @@ export default function CheckoutClient({ dict, locale, business }) {
     note, locale,
   });
 
+  useEffect(() => { liveRef.current = { quote, method, d, email, note, items, locale, t }; });
+
+  /* ---------------------------------------------------------------- express
+     Apple Pay / Google Pay, as Stripe's own branded buttons.
+
+     This gets its OWN Elements group in *deferred* mode (mode/amount/currency
+     instead of a clientSecret). The wallet sheet takes its total from the
+     Elements amount — a clientSecret group is frozen at whatever the amount
+     was when it mounted, so it would quote a stale total after any cart or
+     delivery-method change. Deferred mode lets us call elements.update().
+     The card Payment Element keeps its own clientSecret group: submit()
+     validates every element in ITS group, so sharing one would run card-form
+     validation in the middle of a wallet payment. */
+  const onExpressClick = (event) => {
+    /* HARD RULE: resolve() within ~1s of the tap, synchronously. Any await
+       before this and the wallet sheet just spins forever with no error. */
+    const L = liveRef.current;
+    const q = L.quote;
+    if (!q) { event.reject(); return; }
+    const delivering = L.method === 'delivery';
+    event.resolve({
+      emailRequired: true,
+      phoneNumberRequired: true,
+      shippingAddressRequired: delivering,
+      ...(delivering ? {
+        shippingRates: [{
+          id: 'standard',
+          displayName: L.t.deliveryLine,
+          amount: q.deliveryFils,
+        }],
+      } : {}),
+      lineItems: (q.lines || []).map((l) => ({
+        name: `${l.title}${l.qty > 1 ? ` × ${l.qty}` : ''}`,
+        amount: l.totalFils,
+      })),
+    });
+  };
+
+  const onExpressConfirm = async (event) => {
+    const { stripe, elements } = expressRef.current;
+    const L = liveRef.current;
+    if (!stripe || !elements) { event.paymentFailed({ reason: 'fail' }); return; }
+    setPayError('');
+    setPaying(true);
+    try {
+      /* deferred mode: submit() first, then create the intent, then confirm */
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        event.paymentFailed({ reason: 'fail' });
+        setPayError(submitError.message || L.t.errors.payment_failed);
+        setPaying(false);
+        return;
+      }
+
+      /* the wallet supplies name/email/phone/address — fall back to anything
+         already typed into the form for whatever it doesn't give us */
+      const billing = event.billingDetails || {};
+      const ship = event.shippingAddress || {};
+      const a = ship.address || {};
+      const shipLine = [a.line1, a.line2, a.city, a.state, a.postal_code, a.country].filter(Boolean).join(', ');
+      const body = {
+        items: L.items,
+        method: L.method,
+        contact: {
+          name: (billing.name || ship.name || L.d.name || '').trim(),
+          email: (billing.email || L.email || '').trim(),
+          phone: (billing.phone || L.d.phone || '').trim(),
+        },
+        address: { line: (shipLine || L.d.address || '').trim(), lat: L.d.lat, lon: L.d.lon },
+        note: L.note,
+        locale: L.locale,
+      };
+
+      const r = await fetch('/api/checkout/intent', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const j = await r.json();
+      if (!r.ok || !j.ok) {
+        event.paymentFailed({ reason: 'fail' });
+        setPayError(j.error === 'items' ? issueText(j.issues, L.t) : L.t.errors[j.error] || L.t.errors.intent_failed);
+        setPaying(false);
+        return;
+      }
+
+      /* no payment_method_data.billing_details here — the wallet provides it,
+         and passing our own makes Stripe reject the confirm. confirmPayment
+         REJECTS on integration errors instead of resolving with {error}. */
+      const { error } = await stripe.confirmPayment({
+        elements,
+        clientSecret: j.clientSecret,
+        confirmParams: { return_url: `${window.location.origin}/${L.locale}/order/confirmed` },
+      });
+      if (error) {
+        event.paymentFailed({ reason: 'fail' });
+        if (error.type !== 'validation_error') {
+          setPayError(error.type === 'card_error' ? error.message : L.t.errors.payment_failed);
+        }
+        setPaying(false);
+        refreshQuote();
+      }
+    } catch (e) {
+      console.error(e);
+      event.paymentFailed({ reason: 'fail' });
+      setPayError(L.t.errors.network);
+      setPaying(false);
+    }
+  };
+
+  const mountExpress = useCallback(async () => {
+    try {
+      const Stripe = await loadStripeJs();
+      const stripe = Stripe(status.publishableKey);
+      const elements = stripe.elements({
+        mode: 'payment',
+        amount: quote.totalFils,
+        currency: (quote.currency || 'AED').toLowerCase(),
+        locale: locale === 'ar' ? 'ar' : 'en',
+        appearance: STRIPE_APPEARANCE,
+      });
+      const ece = elements.create('expressCheckout', {
+        buttonHeight: 48,
+        layout: { maxColumns: 2, maxRows: 2 },
+      });
+      ece.on('ready', ({ availablePaymentMethods }) => setExpressAvailable(Boolean(availablePaymentMethods)));
+      ece.on('click', onExpressClick);
+      ece.on('confirm', onExpressConfirm);
+      ece.mount('#express-checkout-element');
+      expressRef.current = { stripe, elements, ece };
+    } catch (e) {
+      console.error('express checkout unavailable:', e);
+    }
+  }, [status, quote, locale]); // eslint-disable-line
+
+  useEffect(() => {
+    if (status?.stripe && status.publishableKey && quote && !expressRef.current.ece) mountExpress();
+  }, [status, quote, mountExpress]);
+
+  /* keep the wallet sheet's total honest when the basket or method changes */
+  useEffect(() => {
+    if (expressRef.current.elements && quote?.totalFils) {
+      expressRef.current.elements.update({ amount: quote.totalFils });
+    }
+  }, [quote?.totalFils]);
+
   /* mount the Payment Element once contact + address are valid — everything
      lives on one page here, so "step 4" becomes "the moment the form is
      complete enough to charge a card" instead of an explicit step. */
@@ -164,14 +324,14 @@ export default function CheckoutClient({ dict, locale, business }) {
       const elements = stripe.elements({
         clientSecret: j.clientSecret,
         locale: locale === 'ar' ? 'ar' : 'en',
-        appearance: {
-          variables: {
-            colorPrimary: '#fe626c', colorText: '#133155', colorBackground: '#ffffff',
-            borderRadius: '16px', fontFamily: 'inherit',
-          },
-        },
+        appearance: STRIPE_APPEARANCE,
       });
-      const paymentElement = elements.create('payment', { layout: 'tabs' });
+      /* wallets off here — the branded Apple/Google Pay buttons live in the
+         express element above, and having both showed them twice */
+      const paymentElement = elements.create('payment', {
+        layout: 'tabs',
+        wallets: { applePay: 'never', googlePay: 'never' },
+      });
       paymentElement.mount('#payment-element');
       paymentElement.on('ready', () => setStripeReady(true));
       stripeRef.current = { stripe, elements, pi: j.paymentIntentId, amountFils: j.amountFils };
@@ -198,7 +358,13 @@ export default function CheckoutClient({ dict, locale, business }) {
     });
     /* only reached on immediate failure (declines, validation) — success redirects */
     if (error) {
-      setPayError(error.type === 'card_error' ? error.message : t.errors.payment_failed);
+      /* A half-filled card form comes back as validation_error, and Stripe has
+         ALREADY printed "Your card number is incomplete" under the field it
+         belongs to. Adding a red "the payment did not go through" banner on
+         top of that read as a failed charge when nothing was even attempted. */
+      if (error.type !== 'validation_error') {
+        setPayError(error.type === 'card_error' ? error.message : t.errors.payment_failed);
+      }
       setPaying(false);
       refreshQuote();
     }
@@ -330,6 +496,18 @@ export default function CheckoutClient({ dict, locale, business }) {
           {status && !status.stripe && (
             <div role="status" className="mb-5 rounded-2xl bg-sun/60 p-4 text-sm text-ink">{t.stripeNotConfigured}</div>
           )}
+
+          {/* Apple Pay / Google Pay — Stripe's own branded buttons. Hidden
+              entirely (not just empty) on devices with no wallet available. */}
+          <div className={status?.stripe && expressAvailable ? 'mb-6' : 'sr-only'} aria-hidden={!expressAvailable}>
+            <div id="express-checkout-element" />
+            <div className="mt-5 flex items-center gap-3" aria-hidden="true">
+              <span className="h-px flex-1 bg-border" />
+              <span className="text-[0.68rem] font-extrabold uppercase tracking-[0.12em] text-muted-foreground">{t.orPayAnotherWay}</span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+          </div>
+
           <div role="radiogroup" aria-label={t.payTitle} className="grid gap-3 sm:grid-cols-2">
             {status?.stripe && (
               <button type="button" role="radio" aria-checked={payMethod === 'card'} onClick={() => setPayMethod('card')} data-testid="pay-card"
