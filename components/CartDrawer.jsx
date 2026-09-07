@@ -6,7 +6,7 @@ import { useCart } from './CartContext';
 import Placeholder from './Placeholder';
 import FreeDeliveryBar from './FreeDeliveryBar';
 import EmptyState from './EmptyState';
-import { formatPrice } from '@/lib/products';
+import { formatMoney } from '@/lib/products';
 import { cartLineImage } from '@/lib/product-images';
 
 export default function CartDrawer({ dict, locale, collections = [] }) {
@@ -51,7 +51,7 @@ export default function CartDrawer({ dict, locale, collections = [] }) {
             <ShoppingBag className="h-5 w-5 text-coral" strokeWidth={1.6} />
             <span className="eyebrow-new">{t.title} ({cart.count})</span>
           </div>
-          <button type="button" onClick={() => cart.setOpen(false)} aria-label="Close" className="grid h-9 w-9 place-items-center rounded-full bg-secondary transition-colors hover:bg-coral hover:text-white">
+          <button type="button" onClick={() => cart.setOpen(false)} aria-label={t.close || 'Close'} className="ui-icon-btn bg-secondary hover:bg-coral hover:text-white">
             <X className="h-4 w-4" strokeWidth={1.6} />
           </button>
         </div>
@@ -85,16 +85,16 @@ export default function CartDrawer({ dict, locale, collections = [] }) {
                       </ul>
                     )}
                     <div className="mt-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2 rounded-full border border-border px-1.5 py-1">
-                        <button type="button" aria-label="-" onClick={() => cart.setQty(item, item.qty - 1)} className="grid h-6 w-6 place-items-center rounded-full hover:bg-secondary">
-                          <Minus className="h-3.5 w-3.5" strokeWidth={1.6} />
+                      <div className="ui-qty ui-qty-sm">
+                        <button type="button" aria-label={t.decrease || '-'} onClick={() => cart.setQty(item, item.qty - 1)}>
+                          <Minus className="h-3.5 w-3.5" strokeWidth={1.8} />
                         </button>
-                        <span className="w-5 text-center text-sm tabular-nums">{item.qty}</span>
-                        <button type="button" aria-label="+" onClick={() => cart.setQty(item, item.qty + 1)} className="grid h-6 w-6 place-items-center rounded-full hover:bg-secondary">
-                          <Plus className="h-3.5 w-3.5" strokeWidth={1.6} />
+                        <span>{item.qty}</span>
+                        <button type="button" aria-label={t.increase || '+'} onClick={() => cart.setQty(item, item.qty + 1)}>
+                          <Plus className="h-3.5 w-3.5" strokeWidth={1.8} />
                         </button>
                       </div>
-                      <span className="text-sm font-semibold tabular-nums">{formatPrice(item.price * item.qty, 'AED', locale)}</span>
+                      <span className="money text-sm font-semibold">{formatMoney(item.price * item.qty, 'AED', locale)}</span>
                     </div>
                   </div>
                 </li>
@@ -108,13 +108,13 @@ export default function CartDrawer({ dict, locale, collections = [] }) {
             <FreeDeliveryBar subtotal={cart.subtotal} dict={dict} locale={locale} />
             <div className="mt-3 flex items-center justify-between text-sm">
               <span className="label-xs">{t.subtotal}</span>
-              <span className="font-display text-lg font-semibold tabular-nums">{formatPrice(cart.subtotal, 'AED', locale)}</span>
+              <span className="money font-display text-lg font-semibold">{formatMoney(cart.subtotal, 'AED', locale)}</span>
             </div>
             <Link
               href={`/${locale}/checkout`}
               onClick={() => cart.setOpen(false)}
               data-testid="go-checkout"
-              className="mt-4 block rounded-full bg-primary py-4 text-center text-[0.72rem] font-extrabold uppercase tracking-[0.14em] text-white transition-colors hover:bg-coral"
+              className="ui-btn ui-btn-primary ui-btn-lg ui-btn-block mt-4"
             >
               {t.checkout}
             </Link>

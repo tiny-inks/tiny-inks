@@ -20,7 +20,7 @@ export default function PrintConfirmation({ dict, locale, business }) {
     return (
       <section className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center px-5 text-center">
         <h3 className="display-md">{c.none}</h3>
-        <Link href={`/${locale}/print`} className="mt-7 inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 text-[0.72rem] font-extrabold uppercase tracking-[0.12em] text-white transition-colors hover:bg-coral">{c.startNew}</Link>
+        <Link href={`/${locale}/print`} className="mt-7 ui-btn ui-btn-primary ui-btn-lg">{c.startNew}</Link>
       </section>
     );
   }
@@ -45,7 +45,7 @@ export default function PrintConfirmation({ dict, locale, business }) {
       {!job.demo && !job.paid && (
         <div className="mx-auto mt-6 max-w-lg rounded-2xl bg-sun/60 p-5 text-center">
           <p className="text-sm text-ink">{c.payNote}</p>
-          <Link href={`/${locale}/cart`} className="mt-3 inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3.5 text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-white transition-colors hover:bg-coral">{c.payCta}</Link>
+          <Link href={`/${locale}/cart`} className="mt-3 ui-btn ui-btn-primary">{c.payCta}</Link>
         </div>
       )}
 
@@ -84,7 +84,7 @@ export default function PrintConfirmation({ dict, locale, business }) {
             <li>{c.step3}</li>
           </ol>
           <p className="mt-4 text-xs text-muted-foreground">{t.privacyShort}</p>
-          <a href={`${business.whatsappHref}?text=${waText}`} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3.5 text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-white transition-colors hover:bg-coral">
+          <a href={`${business.whatsappHref}?text=${waText}`} target="_blank" rel="noreferrer" className="mt-5 ui-btn ui-btn-primary">
             <Send className="h-4 w-4" /> {c.whatsapp}
           </a>
           <Link href={`/${locale}/print`} className="mt-4 block text-[0.68rem] font-bold uppercase tracking-[0.1em] text-muted-foreground underline underline-offset-4">{c.startNew}</Link>

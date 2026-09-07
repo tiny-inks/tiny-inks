@@ -10,7 +10,7 @@ export default function EmptyState({ dict, locale, collections = [], title, cta,
       <h3 className="mt-3 font-display text-xl">{title}</h3>
 
       {cta && ctaHref ? (
-        <Link href={ctaHref} className="mt-6 inline-flex items-center rounded-full border-[1.5px] border-ink bg-ink px-7 py-3.5 text-[0.72rem] font-extrabold uppercase tracking-[0.12em] text-white transition-colors hover:bg-coral hover:border-coral">
+        <Link href={ctaHref} className="ui-btn ui-btn-primary mt-6">
           {cta}
         </Link>
       ) : null}

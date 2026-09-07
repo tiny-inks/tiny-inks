@@ -22,7 +22,7 @@ export default async function ShopPage({ params }) {
 
   return (
     <>
-      <section className="overflow-hidden bg-sky py-10 sm:py-12">
+      <section className="overflow-hidden bg-sky py-12 sm:py-16">
         <div className="mx-auto max-w-[1440px] px-5 sm:px-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-2xl">

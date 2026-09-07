@@ -63,7 +63,7 @@ export default function ProductCard({ product, locale, dict, image, index = 0 })
           aria-label={saved ? dict.product.wishlistRemove : dict.product.wishlistAdd}
           aria-pressed={!!saved}
           onClick={() => wishlist?.toggle(product.handle)}
-          className={`absolute end-2.5 top-2.5 z-10 grid h-8 w-8 place-items-center rounded-full shadow-sm transition-all duration-300 active:scale-90 ${saved ? 'bg-coral text-white' : 'bg-card/95 text-foreground/70 hover:text-coral'}`}
+          className={`absolute end-2 top-2 z-10 grid h-10 w-10 place-items-center rounded-full shadow-sm transition-all duration-300 active:scale-90 ${saved ? 'bg-coral text-white' : 'bg-card/95 text-foreground/70 hover:text-coral'}`}
         >
           <Heart className={`h-4 w-4 ${saved ? 'fill-current' : ''}`} strokeWidth={1.8} />
         </button>
@@ -74,21 +74,36 @@ export default function ProductCard({ product, locale, dict, image, index = 0 })
           <Eye className="h-3.5 w-3.5" /> {dict.product.details}
         </Link>
       </div>
+      {/* Every slot below is ALWAYS rendered, even when empty. Previously the
+          vendor line and the add-to-cart button were conditional, so cards
+          without a vendor or out-of-stock cards came out ~23px shorter and the
+          grid rows stopped lining up. Fixed slots + a two-line title box mean
+          prices and buttons sit on the same baseline across the whole row. */}
       <div className="flex flex-1 flex-col px-1.5 pb-1 pt-3 text-center">
-        {product.vendor && <span className="label-xs">{product.vendor}</span>}
-        <Link href={href} className="mt-1 font-display text-[0.98rem] leading-tight transition-colors hover:text-coral sm:text-lg">
+        <span className="label-xs truncate">{product.vendor || ' '}</span>
+        <Link
+          href={href}
+          title={product.title}
+          className="mt-1 line-clamp-2 min-h-[2.5em] font-display text-[0.98rem] leading-tight transition-colors hover:text-coral sm:text-lg"
+        >
           {product.title}
         </Link>
-        <span className="mt-2 font-display text-base font-semibold tabular-nums">{formatPrice(product.price, product.currency, locale)}</span>
-        {canAdd ? (
-          <button
-            type="button"
-            onClick={() => { cart.add(product, 1); setAdded(true); setTimeout(() => setAdded(false), 1500); }}
-            className={`mt-3 w-full rounded-full border-[1.5px] py-2.5 text-[0.68rem] font-extrabold uppercase tracking-[0.12em] transition-colors duration-300 ${added ? 'border-sage bg-sage text-ink' : 'border-ink hover:bg-ink hover:text-white'}`}
-          >
-            {added ? dict.product.added : dict.product.add}
-          </button>
-        ) : null}
+        <span className="money mt-2 font-display text-base font-semibold">{formatPrice(product.price, product.currency, locale)}</span>
+        <div className="mt-3">
+          {canAdd ? (
+            <button
+              type="button"
+              onClick={() => { cart.add(product, 1); setAdded(true); setTimeout(() => setAdded(false), 1500); }}
+              className={`ui-btn ui-btn-sm ui-btn-block ${added ? 'border-sage bg-sage text-ink' : 'ui-btn-secondary'}`}
+            >
+              {added ? dict.product.added : dict.product.add}
+            </button>
+          ) : (
+            <button type="button" disabled className="ui-btn ui-btn-sm ui-btn-block ui-btn-quiet">
+              {dict.product.soldout}
+            </button>
+          )}
+        </div>
       </div>
     </article>
   );

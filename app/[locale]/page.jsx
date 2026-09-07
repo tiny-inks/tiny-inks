@@ -6,7 +6,7 @@ import CategoryCircles from '@/components/CategoryCircles';
 import TabbedFavourites from '@/components/TabbedFavourites';
 import ProductMarquee from '@/components/ProductMarquee';
 import PhotoFrame from '@/components/PhotoFrame';
-import { NewsletterForm } from '@/components/Forms';
+
 import { getDict } from '@/lib/dictionaries';
 import { getProducts, getCollections, getCollectionWithProducts } from '@/lib/products';
 import { poolUrl } from '@/lib/product-images';
@@ -301,14 +301,9 @@ export default async function Home({ params }) {
         </Reveal>
       </section>
 
-      {/* Newsletter */}
-      <section className="mx-auto max-w-[860px] px-4 pb-16 text-center sm:px-8 sm:pb-24">
-        <Reveal>
-          <h2 className="display-lg">{dict.home.newsTitle}</h2>
-          <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">{dict.home.newsLede}</p>
-          <div className="mt-6 flex justify-center"><NewsletterForm dict={dict} locale={locale} /></div>
-        </Reveal>
-      </section>
+      {/* Newsletter lives in the footer only — it used to appear here too,
+          with the identical heading, copy and form, roughly one screen above
+          the footer band that repeats it on every page. */}
 
       {/* Instagram strip */}
       <section className="mx-auto max-w-[1240px] px-4 pb-16 sm:px-8 sm:pb-24">

@@ -2288,6 +2288,12 @@ h1 em, h2 em { color: var(--terracotta); }
     -webkit-font-smoothing: antialiased;
   }
   body.brand-new h1, body.brand-new h2, body.brand-new h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.01em; }
+  /* h3 is the workhorse sub-heading (card titles, footer columns, accordion
+     rows) and had picked up five different line-heights between 1.12 and 1.56
+     for text of roughly the same size. One ratio here; the display-* utilities
+     still override it for the few h3s used as large display type, since
+     utilities outrank this layer. */
+  body.brand-new h3 { line-height: 1.35; }
   body.brand-new ::selection { background: var(--coral); color: var(--card); }
   /* Preflight-equivalent reset, scoped to the new brand only — skipping
      Preflight entirely (see the note at the top of this file) means these
@@ -2298,6 +2304,177 @@ h1 em, h2 em { color: var(--terracotta); }
   body.brand-new button { font-family: inherit; color: inherit; cursor: pointer; background: none; border: none; padding: 0; text-align: inherit; }
   body.brand-new ul, body.brand-new ol { list-style: none; margin: 0; padding: 0; }
   body.brand-new input, body.brand-new textarea, body.brand-new select { font: inherit; color: inherit; }
+}
+
+/* ============================================================================
+   COMPONENTS — the shared control system.
+
+   Sits between `base` and `utilities` on purpose: these classes beat the base
+   reset (so a .ui-btn gets its padding back after `body.brand-new button`
+   strips it), but a Tailwind utility on the same element still wins, so
+   one-off tweaks like `w-full` or `bg-sage` keep working.
+
+   Why this exists: an audit of the live pages found 28 distinct button
+   renderings (heights 28–52px, 8 font sizes, 10 letter-spacings) and 10
+   distinct input renderings (radii 0/20/26/pill, borders 1px and 2px),
+   because every button was hand-tuned with its own arbitrary values. One
+   scale here replaces all of that.
+   ========================================================================= */
+@layer components {
+  /* ---- control sizing: one 8px-based scale, shared by buttons and fields */
+  :root {
+    --control-h-sm: 2.5rem;   /* 40px — dense/table rows, chips        */
+    --control-h-md: 3rem;     /* 48px — the default for everything     */
+    --control-h-lg: 3.5rem;   /* 56px — primary page/checkout actions  */
+    --control-px-sm: 1.25rem; /* 20px */
+    --control-px-md: 1.75rem; /* 28px */
+    --control-px-lg: 2rem;    /* 32px */
+    /* one type treatment for every button/label, so tracking and weight stop
+       drifting between components */
+    --control-fs: 0.75rem;
+    --control-fw: 800;
+    --control-ls: 0.12em;
+    --field-radius: 999px;
+    --field-radius-area: 1.25rem; /* multiline can't be a pill */
+    --field-border: 1.5px;
+  }
+
+  /* ---- buttons ---------------------------------------------------------- */
+  .ui-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    height: var(--control-h-md);
+    padding-inline: var(--control-px-md);
+    border-radius: 999px;
+    border: var(--field-border) solid transparent;
+    font-size: var(--control-fs);
+    font-weight: var(--control-fw);
+    letter-spacing: var(--control-ls);
+    text-transform: uppercase;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color .3s var(--ease-brand), border-color .3s var(--ease-brand),
+                color .3s var(--ease-brand), transform .3s var(--ease-brand);
+  }
+  .ui-btn:disabled,
+  .ui-btn[aria-disabled='true'] { opacity: .45; cursor: not-allowed; }
+  .ui-btn:not(:disabled):active { transform: scale(.98); }
+
+  .ui-btn-sm { height: var(--control-h-sm); padding-inline: var(--control-px-sm); font-size: 0.7rem; }
+  .ui-btn-lg { height: var(--control-h-lg); padding-inline: var(--control-px-lg); }
+  .ui-btn-block { display: flex; width: 100%; }
+
+  /* the three roles — nothing else should invent a fourth */
+  .ui-btn-primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .ui-btn-primary:not(:disabled):hover { background: var(--coral); border-color: var(--coral); }
+
+  .ui-btn-secondary { background: transparent; border-color: var(--ink); color: var(--ink); }
+  .ui-btn-secondary:not(:disabled):hover { background: var(--ink); color: #fff; }
+
+  .ui-btn-quiet { background: var(--card); border-color: var(--line); color: var(--ink); }
+  .ui-btn-quiet:not(:disabled):hover { border-color: var(--ink); }
+
+  /* ---- form fields ------------------------------------------------------ */
+  .ui-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+  .ui-field {
+    display: block;
+    width: 100%;
+    height: var(--control-h-md);
+    padding-inline: 1.125rem;
+    border: var(--field-border) solid var(--line);
+    border-radius: var(--field-radius);
+    background: var(--card);
+    font-size: 0.95rem;
+    line-height: 1.4;
+    outline: none;
+    transition: border-color .2s var(--ease-brand), box-shadow .2s var(--ease-brand);
+  }
+  textarea.ui-field {
+    height: auto;
+    min-height: 5.5rem;
+    padding-block: 0.875rem;
+    border-radius: var(--field-radius-area);
+    resize: vertical;
+  }
+  select.ui-field { padding-inline-end: 2.25rem; }
+  .ui-field::placeholder { color: var(--muted-foreground); opacity: .8; }
+  .ui-field:focus { border-color: var(--coral); box-shadow: 0 0 0 3px color-mix(in srgb, var(--coral) 18%, transparent); }
+  .ui-field[aria-invalid='true'] { border-color: var(--coral); }
+  .ui-field:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* ---- vertical rhythm: one section scale instead of per-page py-* --------
+     Every top-level band uses this so section-to-section spacing stops
+     drifting between 14/16/20/24 in different files. */
+  .section-y { padding-block: clamp(3rem, 6vw, 5rem); }
+  .section-y-sm { padding-block: clamp(2rem, 4vw, 3.5rem); }
+
+  /* heading → paragraph → CTA rhythm, so copy blocks match everywhere */
+  .stack > * + * { margin-top: 0.75rem; }
+  .stack-lg > * + * { margin-top: 1.5rem; }
+
+  /* ---- quantity stepper -------------------------------------------------
+     One stepper for the drawer, the cart page and the product page. The
+     buttons were 24px in the drawer and 28px on the cart page — well under
+     the 44px touch minimum, and different sizes for the same control. */
+  .ui-qty {
+    display: inline-flex;
+    align-items: center;
+    border: var(--field-border) solid var(--line);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .ui-qty button {
+    display: grid;
+    place-items: center;
+    width: 2.75rem;   /* 44px */
+    height: 2.75rem;
+    flex: none;
+    transition: background-color .2s var(--ease-brand);
+  }
+  .ui-qty button:hover:not(:disabled) { background: var(--secondary, color-mix(in srgb, var(--ink) 6%, transparent)); }
+  .ui-qty button:disabled { opacity: .35; cursor: not-allowed; }
+  .ui-qty output,
+  .ui-qty > span {
+    min-width: 2rem;
+    text-align: center;
+    font-weight: 800;
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+  }
+  /* compact variant for the narrow drawer — still a 40px target */
+  .ui-qty-sm button { width: 2.5rem; height: 2.5rem; }
+
+  /* ---- icon buttons (header actions) ------------------------------------
+     44px so every header control clears the touch-target minimum; they were
+     36px, and the row mixed 36/40/44 between header, drawer and menu. */
+  .ui-icon-btn {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    flex: none;
+    border-radius: 999px;
+    transition: background-color .25s var(--ease-brand), color .25s var(--ease-brand);
+  }
+  .ui-icon-btn:hover { background: var(--secondary, color-mix(in srgb, var(--ink) 6%, transparent)); }
+  /* the cart is the one header action that should read as primary */
+  .ui-icon-btn-accent { background: var(--ink); color: #fff; }
+  .ui-icon-btn-accent:hover { background: var(--coral); color: #fff; }
+
+  /* ---- money: tabular figures everywhere a column of prices is read ------ */
+  .money { font-variant-numeric: tabular-nums; }
 }
 
 /* Deliberately LAST in the file — see the LAYER ORDER note at the top.

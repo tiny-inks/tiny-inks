@@ -103,7 +103,7 @@ export default function Header({ dict, locale }) {
                 type="button"
                 aria-label={dict.header.menu}
                 onClick={() => setMenu(true)}
-                className="grid h-9 w-9 place-items-center rounded-full bg-secondary lg:hidden"
+                className="ui-icon-btn bg-secondary lg:hidden"
               >
                 <Menu className="h-5 w-5" strokeWidth={1.6} />
               </button>
@@ -129,17 +129,17 @@ export default function Header({ dict, locale }) {
               <Link
                 href={`/${otherLocale}${rest}`}
                 aria-label="Language"
-                className="hidden items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[0.68rem] font-extrabold uppercase tracking-[0.1em] transition-colors hover:border-coral hover:text-coral sm:inline-flex"
+                className="hidden h-11 items-center gap-1.5 rounded-full border border-border px-4 text-[0.68rem] font-extrabold uppercase tracking-[0.1em] transition-colors hover:border-coral hover:text-coral sm:inline-flex"
               >
                 <Globe className="h-4 w-4" strokeWidth={1.6} /> {otherLocale === 'ar' ? 'العربية' : 'English'}
               </Link>
-              <Link href={`/${locale}/shop`} aria-label={dict.search.label} className="grid h-9 w-9 place-items-center rounded-full transition-colors hover:bg-secondary">
+              <Link href={`/${locale}/shop`} aria-label={dict.search.label} className="ui-icon-btn">
                 <Search className="h-[19px] w-[19px]" strokeWidth={1.6} />
               </Link>
               <Link
                 href={`/${locale}/wishlist`}
                 aria-label={`${dict.nav.wishlist} (${wishlist?.count || 0})`}
-                className="relative grid h-9 w-9 place-items-center rounded-full transition-colors hover:bg-secondary"
+                className="ui-icon-btn"
               >
                 <Heart className="h-[19px] w-[19px]" strokeWidth={1.6} />
                 {wishlist?.count > 0 && (
@@ -152,7 +152,7 @@ export default function Header({ dict, locale }) {
                 type="button"
                 onClick={() => cart?.setOpen(true)}
                 aria-label={`${dict.cart} (${cart?.count || 0})`}
-                className="relative grid h-9 w-9 place-items-center rounded-full transition-colors hover:bg-secondary"
+                className="ui-icon-btn ui-icon-btn-accent"
               >
                 <ShoppingBag className="h-[19px] w-[19px]" strokeWidth={1.6} />
                 <span className="absolute -end-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-coral px-1 text-[0.6rem] font-extrabold text-white">

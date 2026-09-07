@@ -70,8 +70,8 @@ export default function OrderConfirmed({ dict, locale, business }) {
         <h1 className="display-lg mt-6">{t.failedTitle}</h1>
         <p className="mt-3 max-w-md text-sm text-muted-foreground">{t.failedLede}</p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link href={`/${locale}/checkout`} className="inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 text-[0.72rem] font-extrabold uppercase tracking-[0.12em] text-white transition-colors hover:bg-coral">{t.tryAgain}</Link>
-          <a href={`${business.whatsappHref}?text=${encodeURIComponent(t.waHelp)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border-2 border-ink px-8 py-4 text-[0.72rem] font-extrabold uppercase tracking-[0.12em] transition-colors hover:bg-sun">{t.whatsapp}</a>
+          <Link href={`/${locale}/checkout`} className="ui-btn ui-btn-primary ui-btn-lg">{t.tryAgain}</Link>
+          <a href={`${business.whatsappHref}?text=${encodeURIComponent(t.waHelp)}`} target="_blank" rel="noreferrer" className="ui-btn ui-btn-secondary ui-btn-lg">{t.whatsapp}</a>
         </div>
       </section>
     );
@@ -81,7 +81,7 @@ export default function OrderConfirmed({ dict, locale, business }) {
     return (
       <section className="mx-auto flex min-h-[60vh] max-w-xl flex-col items-center justify-center px-5 text-center">
         <h3 className="display-md">{t.noOrder}</h3>
-        <Link href={`/${locale}/shop`} className="mt-7 inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 text-[0.72rem] font-extrabold uppercase tracking-[0.12em] text-white transition-colors hover:bg-coral">{dict.cartUi.emptyCta}</Link>
+        <Link href={`/${locale}/shop`} className="mt-7 ui-btn ui-btn-primary ui-btn-lg">{dict.cartUi.emptyCta}</Link>
       </section>
     );
   }
@@ -110,7 +110,7 @@ export default function OrderConfirmed({ dict, locale, business }) {
           <li>{t.step2}</li>
           <li>{t.step3}</li>
         </ol>
-        <a href={`${business.whatsappHref}?text=${waText}`} target="_blank" rel="noreferrer" className="mt-6 inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3.5 text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-white transition-colors hover:bg-coral">
+        <a href={`${business.whatsappHref}?text=${waText}`} target="_blank" rel="noreferrer" className="mt-6 ui-btn ui-btn-primary">
           <Send className="h-4 w-4" /> {t.whatsapp}
         </a>
         <Link href={`/${locale}/shop`} className="mt-4 block text-[0.68rem] font-bold uppercase tracking-[0.1em] text-muted-foreground underline underline-offset-4">{t.keepShopping}</Link>

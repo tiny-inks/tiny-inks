@@ -58,9 +58,20 @@ export default function HomeHero({ dict, locale }) {
         <button type="button" aria-label={dict.carousel.next} onClick={() => setSlide((s) => (s + 1) % slides.length)} className="absolute end-3 top-1/2 hidden h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-card/85 text-ink shadow sm:grid">
           <ChevronRight className="h-5 w-5 rtl:rotate-180" />
         </button>
-        <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2">
+        {/* the dot stays 8px tall, but each button is a 44px tap target —
+            a bare 8px control is unusable on a phone */}
+        <div className="absolute inset-x-0 bottom-1 flex justify-center gap-1">
           {slides.map((_, i) => (
-            <button key={i} type="button" aria-label={`${i + 1}/${slides.length}`} aria-current={i === slide} onClick={() => setSlide(i)} className={`h-2 rounded-full transition-all ${i === slide ? 'w-7 bg-ink' : 'w-2 bg-ink/30'}`} />
+            <button
+              key={i}
+              type="button"
+              aria-label={`${i + 1}/${slides.length}`}
+              aria-current={i === slide}
+              onClick={() => setSlide(i)}
+              className="grid h-11 place-items-center px-1"
+            >
+              <span className={`block h-2 rounded-full transition-all ${i === slide ? 'w-7 bg-ink' : 'w-2 bg-ink/30'}`} />
+            </button>
           ))}
         </div>
       </div>

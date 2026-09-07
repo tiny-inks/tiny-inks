@@ -47,7 +47,9 @@ const codKey = () => {
   } catch { return `k${Date.now().toString(36)}fallback`; }
 };
 
-const field = 'mt-2 w-full rounded-2xl border-2 border-border bg-card px-4 py-3 text-sm outline-none transition-colors focus:border-coral';
+/* the shared field/label styles now live in globals.css (@layer components)
+   so checkout, print, contact and the newsletter all render identically */
+const field = 'ui-field';
 
 function Card({ eyebrow, children }) {
   return (
@@ -424,17 +426,17 @@ export default function CheckoutClient({ dict, locale, business }) {
         <Card eyebrow={t.contactTitle}>
           <div className="grid gap-5 sm:grid-cols-2">
             <label className="block">
-              <span className="label-xs">{dict.delivery.name} *</span>
+              <span className="ui-label">{dict.delivery.name} *</span>
               <input id="co-name" autoComplete="name" value={d.name} onChange={setD('name')} onBlur={blur('name')} aria-invalid={!!contactErrs.name} className={field} />
               {contactErrs.name && <span className="mt-1 block text-xs text-destructive">{contactErrs.name}</span>}
             </label>
             <label className="block">
-              <span className="label-xs">{dict.delivery.phone} *</span>
+              <span className="ui-label">{dict.delivery.phone} *</span>
               <input id="co-phone" type="tel" inputMode="tel" autoComplete="tel" dir="ltr" placeholder="+971 5x xxx xxxx" value={d.phone} onChange={setD('phone')} onBlur={blur('phone')} aria-invalid={!!contactErrs.phone} className={field} />
               {contactErrs.phone && <span className="mt-1 block text-xs text-destructive">{contactErrs.phone}</span>}
             </label>
             <label className="block sm:col-span-2">
-              <span className="label-xs">{dict.delivery.email} *</span>
+              <span className="ui-label">{dict.delivery.email} *</span>
               <input
                 id="co-email" type="email" inputMode="email" autoComplete="email" dir="ltr"
                 value={email}
@@ -486,7 +488,7 @@ export default function CheckoutClient({ dict, locale, business }) {
           )}
 
           <label className="mt-5 block">
-            <span className="label-xs">{t.noteLabel}</span>
+            <span className="ui-label">{t.noteLabel}</span>
             <textarea id="co-note" rows={2} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t.noteHint} className={`${field} resize-none`} />
           </label>
         </Card>
@@ -580,7 +582,7 @@ export default function CheckoutClient({ dict, locale, business }) {
             disabled={paying || !quote || (payMethod === 'card' && !stripeReady && readyToPay)}
             onClick={placeOrder}
             data-testid={payMethod === 'cod' ? 'co-place-cod' : 'co-pay-now'}
-            className="mt-5 w-full rounded-full bg-ink py-4 text-[0.72rem] font-extrabold uppercase tracking-[0.14em] text-white transition-colors hover:bg-coral disabled:cursor-not-allowed disabled:opacity-40"
+            className="ui-btn ui-btn-primary ui-btn-lg ui-btn-block mt-5"
           >
             {paying ? t.placing : payMethod === 'cod' ? t.placeCod : `${t.payNow}${quote ? ` · ${fmt(quote.totalFils, locale)}` : ''}`}
           </button>

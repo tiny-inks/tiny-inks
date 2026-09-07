@@ -66,7 +66,7 @@ export default function Footer({ dict, locale, collections = [] }) {
               <p className="mt-1 text-sm text-white/50">{dict.footer.arabicName}</p>
               <div className="mt-5 flex gap-3">
                 {socials.map(({ Icon, label, href }) => (
-                  <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label} className="grid h-10 w-10 place-items-center rounded-full border border-white/25 transition-colors hover:border-coral hover:text-coral">
+                  <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label} className="ui-icon-btn border border-white/25 hover:border-coral hover:bg-transparent hover:text-coral">
                     <Icon className="h-4 w-4" strokeWidth={1.6} />
                   </a>
                 ))}

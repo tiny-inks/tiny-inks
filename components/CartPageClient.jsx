@@ -5,7 +5,7 @@ import { useCart } from './CartContext';
 import Placeholder from './Placeholder';
 import FreeDeliveryBar from './FreeDeliveryBar';
 import EmptyState from './EmptyState';
-import { formatPrice } from '@/lib/products';
+import { formatPrice, formatMoney } from '@/lib/products';
 import { cartLineImage } from '@/lib/product-images';
 
 export default function CartPageClient({ dict, locale, collections = [] }) {
@@ -45,15 +45,15 @@ export default function CartPageClient({ dict, locale, collections = [] }) {
                 )}
                 <div className="mt-1 text-sm text-muted-foreground">{formatPrice(item.price, 'AED', locale)} <span>{tp.each}</span></div>
                 <div className="mt-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2 rounded-full border border-border px-1.5 py-1">
-                    <button type="button" aria-label="-" onClick={() => cart.setQty(item, item.qty - 1)} className="grid h-7 w-7 place-items-center rounded-full hover:bg-secondary"><Minus className="h-3.5 w-3.5" strokeWidth={1.6} /></button>
-                    <span className="w-5 text-center text-sm tabular-nums">{item.qty}</span>
-                    <button type="button" aria-label="+" onClick={() => cart.setQty(item, item.qty + 1)} className="grid h-7 w-7 place-items-center rounded-full hover:bg-secondary"><Plus className="h-3.5 w-3.5" strokeWidth={1.6} /></button>
+                  <div className="ui-qty">
+                    <button type="button" aria-label={t.decrease || '-'} onClick={() => cart.setQty(item, item.qty - 1)}><Minus className="h-4 w-4" strokeWidth={1.8} /></button>
+                    <span>{item.qty}</span>
+                    <button type="button" aria-label={t.increase || '+'} onClick={() => cart.setQty(item, item.qty + 1)}><Plus className="h-4 w-4" strokeWidth={1.8} /></button>
                   </div>
                   <button type="button" onClick={() => cart.remove(item)} className="text-xs font-bold text-muted-foreground underline underline-offset-4">{t.remove}</button>
                 </div>
               </div>
-              <strong className="shrink-0 font-display text-base tabular-nums">{formatPrice(item.price * item.qty, 'AED', locale)}</strong>
+              <strong className="money shrink-0 font-display text-base">{formatMoney(item.price * item.qty, 'AED', locale)}</strong>
             </li>
           ))}
         </ul>
@@ -65,10 +65,10 @@ export default function CartPageClient({ dict, locale, collections = [] }) {
         <div className="mt-4"><FreeDeliveryBar subtotal={cart.subtotal} dict={dict} locale={locale} /></div>
         <div className="mt-4 flex items-center justify-between text-sm">
           <span className="label-xs">{t.subtotal}</span>
-          <span className="font-display text-lg font-semibold tabular-nums">{formatPrice(cart.subtotal, 'AED', locale)}</span>
+          <span className="money font-display text-lg font-semibold">{formatMoney(cart.subtotal, 'AED', locale)}</span>
         </div>
         <p className="mt-3 text-xs text-muted-foreground">✦ {tp.shippingNote}</p>
-        <Link href={`/${locale}/checkout`} data-testid="go-checkout" className="mt-5 flex items-center justify-center gap-2 rounded-full bg-ink py-4 text-[0.72rem] font-extrabold uppercase tracking-[0.14em] text-white transition-colors hover:bg-coral">
+        <Link href={`/${locale}/checkout`} data-testid="go-checkout" className="ui-btn ui-btn-primary ui-btn-lg ui-btn-block mt-5">
           <ShoppingBag className="h-4 w-4" /> {t.checkout}
         </Link>
         <div className="mt-6 border-t border-border pt-5">
