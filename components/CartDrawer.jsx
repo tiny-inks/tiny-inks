@@ -7,6 +7,7 @@ import Placeholder from './Placeholder';
 import FreeDeliveryBar from './FreeDeliveryBar';
 import EmptyState from './EmptyState';
 import { formatPrice } from '@/lib/products';
+import { cartLineImage } from '@/lib/product-images';
 
 export default function CartDrawer({ dict, locale, collections = [] }) {
   const cart = useCart();
@@ -65,8 +66,8 @@ export default function CartDrawer({ dict, locale, collections = [] }) {
               {cart.items.map((item) => (
                 <li key={item.lineId} className="flex gap-4 py-5">
                   <div className="h-24 w-20 shrink-0 overflow-hidden rounded-2xl bg-secondary">
-                    {item.image ? (
-                      <img src={item.image} alt="" loading="lazy" className="h-full w-full object-cover" />
+                    {cartLineImage(item) ? (
+                      <img src={cartLineImage(item)} alt="" loading="lazy" className="h-full w-full object-cover" />
                     ) : (
                       <Placeholder handle={item.handle} title={item.title} size="thumb" />
                     )}

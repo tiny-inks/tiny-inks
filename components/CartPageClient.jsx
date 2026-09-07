@@ -6,6 +6,7 @@ import Placeholder from './Placeholder';
 import FreeDeliveryBar from './FreeDeliveryBar';
 import EmptyState from './EmptyState';
 import { formatPrice } from '@/lib/products';
+import { cartLineImage } from '@/lib/product-images';
 
 export default function CartPageClient({ dict, locale, collections = [] }) {
   const cart = useCart();
@@ -27,8 +28,8 @@ export default function CartPageClient({ dict, locale, collections = [] }) {
           {cart.items.map((item) => (
             <li key={item.lineId} className="flex gap-4 p-5">
               <Link href={`/${locale}/product/${item.handle}`} className="h-24 w-20 shrink-0 overflow-hidden rounded-2xl bg-secondary">
-                {item.image ? (
-                  <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
+                {cartLineImage(item) ? (
+                  <img src={cartLineImage(item)} alt={item.title} className="h-full w-full object-cover" />
                 ) : (
                   <Placeholder handle={item.handle} title={item.title} size="thumb" />
                 )}

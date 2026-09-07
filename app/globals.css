@@ -284,9 +284,11 @@ button { font-family: inherit; cursor: pointer; }
 ::selection { background: var(--mustard); color: var(--ink); }
 
 :focus-visible {
-  outline: 3px solid var(--terracotta);
-  outline-offset: 3px;
-  border-radius: 6px;
+  /* no border-radius here: forcing 6px drew a rounded-RECTANGLE ring around
+     pill-shaped buttons. Left alone, the outline follows whatever radius the
+     element itself has, so a rounded-full button gets a rounded-full ring. */
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
 }
 .skip-link {
   position: fixed; top: 10px; inset-inline-start: 10px; z-index: 200;

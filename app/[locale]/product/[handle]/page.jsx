@@ -130,7 +130,9 @@ export default async function ProductPage({ params }) {
               {product.available ? t.instock : t.soldout}
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center gap-3">
+            {/* max-w keeps the buy row a sensible size on wide screens —
+                without it the flex-1 button stretched the full column width. */}
+            <div className="mt-6 flex max-w-lg flex-wrap items-center gap-3">
               <AddToCart product={product} dict={dict} />
               <WishlistButton handle={product.handle} dict={dict} />
             </div>
