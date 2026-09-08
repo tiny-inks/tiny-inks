@@ -2395,7 +2395,7 @@ h1 em, h2 em { color: var(--terracotta); }
     border: var(--field-border) solid var(--line);
     border-radius: var(--field-radius);
     background: var(--card);
-    font-size: 0.95rem;
+    font-size: 1rem;   /* 16px — never smaller, see the zoom note below */
     line-height: 1.4;
     outline: none;
     transition: border-color .2s var(--ease-brand), box-shadow .2s var(--ease-brand);
@@ -2422,6 +2422,14 @@ h1 em, h2 em { color: var(--terracotta); }
   /* heading → paragraph → CTA rhythm, so copy blocks match everywhere */
   .stack > * + * { margin-top: 0.75rem; }
   .stack-lg > * + * { margin-top: 1.5rem; }
+
+  /* iOS Safari zooms into any focused input whose font-size is under 16px.
+     Once zoomed, the page can be panned sideways — which reads as the page
+     "swiping" left/right while you type. Keeping every field at 16px on small
+     screens prevents the zoom, and therefore the pan, entirely. */
+  @media (max-width: 640px) {
+    input:not([type='checkbox']):not([type='radio']), textarea, select { font-size: 16px; }
+  }
 
   /* ---- quantity stepper -------------------------------------------------
      One stepper for the drawer, the cart page and the product page. The

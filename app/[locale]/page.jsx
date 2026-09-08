@@ -216,24 +216,22 @@ export default async function Home({ params }) {
       <ProductMarquee products={products} locale={locale} label={dict.marqueeRow.label} />
 
       {/* Testimonials */}
-      <section className="paper-fibre bg-sky py-14 sm:py-20">
+      <section className="paper-fibre bg-sky py-10 sm:py-14">
         <div className="mx-auto max-w-[1240px] px-4 sm:px-8">
-          <Reveal className="text-center"><h2 className="display-lg text-ink">{dict.home.reviewsTitle}</h2></Reveal>
-          <div className="mt-9 grid gap-5 sm:grid-cols-3">
-            {reviews.map((r, i) => (
-              <Reveal key={r.name} delay={i * 0.08}>
-                <figure className="flex h-full flex-col rounded-3xl bg-card p-7">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex gap-1 text-coral" aria-hidden="true">★★★★★</div>
-                    <span className="rounded-full bg-sage px-2.5 py-1 text-[0.62rem] font-extrabold uppercase tracking-[0.06em] text-ink">✓ {dict.reviewsUi.verified}</span>
-                  </div>
-                  <blockquote className="mt-4 flex-1 text-sm leading-relaxed text-foreground/85">“{r.q}”</blockquote>
-                  <figcaption className="mt-5">
-                    <span className="font-display text-base">{r.name} · {r.city}</span>
-                    <span className="block text-xs text-muted-foreground">{dict.reviewsUi.bought}: {r.product}</span>
-                  </figcaption>
-                </figure>
-              </Reveal>
+          <Reveal className="text-center"><h2 className="display-md text-ink">{dict.home.reviewsTitle}</h2></Reveal>
+          {/* Compact: these were three tall stacked cards. On phones each review
+              is now ONE line; from sm up they sit 3-across in a single row. */}
+          <div className="mt-7 grid gap-3 sm:grid-cols-3 sm:gap-4">
+            {reviews.map((r) => (
+              <figure key={r.name} className="flex items-center gap-2.5 rounded-2xl bg-card px-3.5 py-2.5 sm:h-full sm:flex-col sm:items-start sm:gap-0 sm:px-4 sm:py-3.5">
+                <span className="shrink-0 text-[0.62rem] leading-none text-coral sm:text-[0.7rem]" aria-hidden="true">★★★★★</span>
+                {/* two lines on phones: one line clipped the quote to about
+                    three words, which makes a testimonial worthless */}
+                <blockquote className="line-clamp-2 min-w-0 flex-1 text-[0.78rem] leading-snug text-foreground/85 sm:mt-2 sm:flex-none sm:text-[0.82rem]">“{r.q}”</blockquote>
+                <figcaption className="shrink-0 text-[0.66rem] text-muted-foreground sm:mt-2 sm:text-[0.7rem]">
+                  <span className="font-bold text-foreground">{r.name}</span><span className="hidden sm:inline"> · {r.city}</span>
+                </figcaption>
+              </figure>
             ))}
           </div>
         </div>

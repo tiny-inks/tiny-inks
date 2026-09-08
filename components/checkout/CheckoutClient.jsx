@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LocateFixed, ShoppingBag } from 'lucide-react';
+import { ChevronDown, LocateFixed, ShoppingBag } from 'lucide-react';
 import { useCart } from '../CartContext';
 
 /* On-site checkout: one page — contact, delivery, payment — matching the
@@ -547,12 +547,22 @@ export default function CheckoutClient({ dict, locale, business }) {
 
       {/* ---- order summary: sticky card (desktop) / fixed bottom bar (mobile) ---- */}
       <aside aria-labelledby="co-sum" className="lg:sticky lg:top-28 lg:h-fit">
-        <div className={`fixed inset-x-0 bottom-0 z-40 max-h-[80dvh] overflow-y-auto rounded-t-3xl border-t border-border bg-card px-5 pb-5 pt-4 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] transition-transform duration-300 lg:static lg:max-h-none lg:translate-y-0 lg:rounded-3xl lg:border lg:p-8 lg:shadow-sm ${quoteOpen ? 'translate-y-0' : 'translate-y-[calc(100%-84px)] lg:translate-y-0'}`}>
+        {/* On phones this is a fixed bar. It used to slide almost entirely
+            off-screen, leaving an 84px strip — so the breakdown AND the pay
+            button were both hidden behind a tap on a tiny ▴. Now the total and
+            the button are always visible and only the itemised lines collapse. */}
+        <div className="fixed inset-x-0 bottom-0 z-40 max-h-[85dvh] overflow-y-auto rounded-t-3xl border-t border-border bg-card px-5 pb-5 pt-4 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] lg:static lg:max-h-none lg:rounded-3xl lg:border lg:p-8 lg:shadow-sm">
           <button type="button" onClick={() => setQuoteOpen((v) => !v)} aria-expanded={quoteOpen} aria-controls="co-summary" className="flex w-full items-center justify-between gap-3 lg:hidden">
-            <small className="label-xs">{t.total} <span aria-hidden="true">{quoteOpen ? '▾' : '▴'}</span></small>
-            <strong data-testid="co-sticky-total" className="font-display text-lg tabular-nums">{quote ? fmt(quote.totalFils, locale) : '…'}</strong>
+            <span className="flex items-center gap-1.5 text-[0.7rem] font-extrabold uppercase tracking-[0.1em] text-muted-foreground">
+              {quoteOpen ? t.hideDetails : t.showDetails}
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-300 ${quoteOpen ? 'rotate-180' : ''}`} strokeWidth={2.2} />
+            </span>
+            <span className="flex items-baseline gap-2">
+              <small className="label-xs">{t.total}</small>
+              <strong data-testid="co-sticky-total" className="money font-display text-xl">{quote ? fmt(quote.totalFils, locale) : '…'}</strong>
+            </span>
           </button>
-          <div id="co-summary">
+          <div id="co-summary" className={`${quoteOpen ? 'block' : 'hidden'} lg:block`}>
             <span id="co-sum" className="eyebrow-new hidden lg:block">{t.summary}</span>
             {quote ? (
               <>
