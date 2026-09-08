@@ -2,8 +2,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, LocateFixed, ShoppingBag } from 'lucide-react';
+import { ChevronDown, MapPin, ShoppingBag } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useCart } from '../CartContext';
+
+/* leaflet only loads when someone opens the map */
+const LocationPicker = dynamic(() => import('./LocationPicker'), { ssr: false });
 
 /* On-site checkout: one page — contact, delivery, payment — matching the
    Lovable reference design (no step wizard). Prices always come from
@@ -73,7 +77,7 @@ export default function CheckoutClient({ dict, locale, business }) {
   const [email, setEmail] = useState('');
   const [note, setNote] = useState('');
   const [touched, setTouched] = useState({});
-  const [geo, setGeo] = useState('idle');
+  const [mapOpen, setMapOpen] = useState(false);
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState('');
   const [stripeReady, setStripeReady] = useState(false);
@@ -130,28 +134,6 @@ export default function CheckoutClient({ dict, locale, business }) {
 
   const setD = (k) => (e) => cart.setDelivery({ ...d, [k]: e.target.value });
   const blur = (k) => () => setTouched((s) => ({ ...s, [k]: true }));
-
-  const locate = () => {
-    if (!('geolocation' in navigator)) { setGeo('unsupported'); return; }
-    setGeo('locating');
-    navigator.geolocation.getCurrentPosition(
-      async ({ coords }) => {
-        const lat = coords.latitude.toFixed(6), lon = coords.longitude.toFixed(6);
-        let line = '';
-        try {
-          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=${locale}`, { headers: { Accept: 'application/json' } });
-          const j = await r.json();
-          const a = j.address || {};
-          line = [a.building || a.house_number, a.road, a.neighbourhood || a.suburb, a.city || a.town || a.state, a.country].filter(Boolean).join(', ') || j.display_name || '';
-        } catch {}
-        const mapLink = `https://maps.google.com/?q=${lat},${lon}`;
-        cart.setDelivery({ ...d, address: line ? `${line}\n${mapLink}` : mapLink, lat, lon });
-        setGeo('done');
-      },
-      (err) => setGeo(err.code === 1 ? 'denied' : 'error'),
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
-    );
-  };
 
   const payloadBody = () => ({
     items, method,
@@ -470,19 +452,41 @@ export default function CheckoutClient({ dict, locale, business }) {
             <div className="mt-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <label htmlFor="co-address" className="label-xs">{dict.delivery.address} *</label>
-                <button type="button" onClick={locate} disabled={geo === 'locating'} className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[0.68rem] font-extrabold uppercase tracking-[0.08em] transition-colors hover:border-coral disabled:opacity-60">
-                  <LocateFixed className="h-3.5 w-3.5" strokeWidth={2} />
-                  {geo === 'locating' ? dict.delivery.locating : dict.delivery.locate}
+                <button
+                  type="button"
+                  onClick={() => setMapOpen((v) => !v)}
+                  aria-expanded={mapOpen}
+                  aria-controls="co-map"
+                  className="flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[0.68rem] font-extrabold uppercase tracking-[0.08em] transition-colors hover:border-coral"
+                >
+                  <MapPin className="h-3.5 w-3.5" strokeWidth={2} />
+                  {mapOpen ? dict.delivery.hideMap : dict.delivery.pickOnMap}
                 </button>
               </div>
               <textarea id="co-address" rows={3} autoComplete="street-address" placeholder={dict.delivery.addressHint} value={d.address} onChange={setD('address')} className={`${field} resize-none`} />
+              {/* the pin, not a typed line, is what actually finds the door */}
+              {mapOpen && (
+                <div id="co-map">
+                  <LocationPicker
+                    lat={d.lat}
+                    lon={d.lon}
+                    locale={locale}
+                    dict={dict}
+                    onChange={({ lat, lon, line }) =>
+                      cart.setDelivery({
+                        ...cart.delivery,
+                        lat,
+                        lon,
+                        address: line
+                          ? `${line}\nhttps://maps.google.com/?q=${lat},${lon}`
+                          : cart.delivery.address,
+                      })
+                    }
+                  />
+                </div>
+              )}
               <span role="status" className="mt-1.5 block text-xs text-muted-foreground">
-                {geo === 'idle' && dict.delivery.geoNote}
-                {geo === 'locating' && dict.delivery.locating}
-                {geo === 'done' && dict.delivery.geoDone}
-                {geo === 'denied' && dict.delivery.geoDenied}
-                {geo === 'error' && dict.delivery.geoError}
-                {geo === 'unsupported' && dict.delivery.geoUnsupported}
+                {d.lat ? dict.delivery.pinSet : dict.delivery.geoNote}
               </span>
             </div>
           )}

@@ -2423,14 +2423,6 @@ h1 em, h2 em { color: var(--terracotta); }
   .stack > * + * { margin-top: 0.75rem; }
   .stack-lg > * + * { margin-top: 1.5rem; }
 
-  /* iOS Safari zooms into any focused input whose font-size is under 16px.
-     Once zoomed, the page can be panned sideways — which reads as the page
-     "swiping" left/right while you type. Keeping every field at 16px on small
-     screens prevents the zoom, and therefore the pan, entirely. */
-  @media (max-width: 640px) {
-    input:not([type='checkbox']):not([type='radio']), textarea, select { font-size: 16px; }
-  }
-
   /* ---- quantity stepper -------------------------------------------------
      One stepper for the drawer, the cart page and the product page. The
      buttons were 24px in the drawer and 28px on the cart page — well under
@@ -2567,3 +2559,20 @@ h1 em, h2 em { color: var(--terracotta); }
    Utilities must be the last @layer block to appear so it outranks both
    `legacy` and `base` above in the compiled cascade. */
 @import "tailwindcss/utilities" layer(utilities);
+
+
+/* ============================================================================
+   iOS ZOOM GUARD — deliberately UNLAYERED and last in the file.
+
+   iOS Safari zooms into any focused input whose font-size is under 16px, and
+   the zoomed page can then be panned sideways — which is what reads as the
+   page "swiping" left and right while you type. This has to outrank Tailwind
+   text-* utilities (text-sm on the search box, the newsletter field, etc.),
+   and unlayered rules beat every @layer, so it lives here rather than in
+   @layer components where an earlier attempt silently lost the cascade.
+   ========================================================================= */
+@media (max-width: 640px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select { font-size: 16px !important; }
+}
