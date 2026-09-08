@@ -2477,6 +2477,84 @@ h1 em, h2 em { color: var(--terracotta); }
   .money { font-variant-numeric: tabular-nums; }
 }
 
+/* ============================================================================
+   PRINT HERO — printer scene (components/print/PrinterScene.jsx)
+
+   Everything below the "resting state" block only runs when the visitor has
+   NOT asked for reduced motion. The resting state is deliberately the
+   FINISHED print — sheet out, artwork visible — so a reduced-motion visitor
+   sees a complete illustration rather than an idle empty machine.
+   Only transform/opacity are animated, so the loop stays on the compositor.
+   ========================================================================= */
+@layer components {
+  /* Deliberately smaller on phones: the scene is decorative there, and at full
+     size it pushed the actual upload control more than a screen further down. */
+  .printer-scene { width: 100%; max-width: 15rem; margin-inline: auto; }
+  @media (min-width: 640px) { .printer-scene { max-width: 30rem; } }
+  .printer-scene svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+  .ps-title {
+    font-family: var(--font-display); font-size: 19px; font-weight: 600; letter-spacing: 0.02em;
+  }
+  .ps-line {
+    font-family: var(--font-sans); font-size: 11px; font-weight: 800; letter-spacing: 0.13em;
+  }
+
+  /* ---- resting state (also what reduced-motion visitors get) ---- */
+  .ps-feed { opacity: 0; }                              /* tray sheet consumed */
+  .ps-sheet { transform: translateY(96px); }            /* sheet fully out */
+  .ps-wipe { transform: translateY(134px); }            /* artwork fully printed */
+  .ps-line-2, .ps-line-3 { opacity: 0; }                /* one strapline shows */
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* 9s loop shared by every part so the phases stay in sync */
+    .ps-feed   { animation: ps-feed 9s var(--ease-brand) infinite; }
+    .ps-sheet  { animation: ps-sheet 9s var(--ease-brand) infinite; }
+    .ps-wipe { animation: ps-wipe 9s linear infinite; }   /* constant-speed: a printer prints at a steady rate */
+    .ps-head   { animation: ps-head 1.15s ease-in-out infinite; }
+    .ps-head-wrap { animation: ps-head-active 9s steps(1, end) infinite; }
+    .ps-roller { animation: ps-roller 9s steps(1, end) infinite; transform-origin: 130px 212px; }
+    .ps-roller-2 { transform-origin: 290px 212px; }
+    .ps-led    { animation: ps-led 9s ease-in-out infinite; }
+    .ps-line-1 { animation: ps-cycle 27s steps(1, end) infinite; }
+    .ps-line-2 { animation: ps-cycle 27s steps(1, end) infinite -9s; }
+    .ps-line-3 { animation: ps-cycle 27s steps(1, end) infinite -18s; }
+  }
+
+  /* sheet drops out of the top tray into the machine */
+  @keyframes ps-feed {
+    0%, 4%   { opacity: 1; transform: translateY(0); }
+    18%      { opacity: 1; transform: translateY(58px); }
+    24%, 92% { opacity: 0; transform: translateY(58px); }
+    100%     { opacity: 1; transform: translateY(0); }
+  }
+  /* printed sheet slides out of the front slot, rests, then resets */
+  @keyframes ps-sheet {
+    0%, 22%  { transform: translateY(-96px); }
+    58%      { transform: translateY(96px); }
+    88%      { transform: translateY(96px); }
+    92%, 100% { transform: translateY(-96px); }
+  }
+  /* white wipe travels down the page so artwork appears as it is printed */
+  @keyframes ps-wipe {
+    0%, 24%  { transform: translateY(0); }
+    56%      { transform: translateY(134px); }
+    88%      { transform: translateY(134px); }
+    92%, 100% { transform: translateY(0); }
+  }
+  /* head only sweeps while printing */
+  @keyframes ps-head { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(140px); } }
+  @keyframes ps-head-active { 0%, 22% { opacity: 0.55; } 24%, 58% { opacity: 1; } 60%, 100% { opacity: 0.55; } }
+  @keyframes ps-roller { 0%, 22% { transform: rotate(0deg); } 58% { transform: rotate(320deg); } 100% { transform: rotate(320deg); } }
+  @keyframes ps-led {
+    0%, 20%  { opacity: 0.35; }
+    26%, 56% { opacity: 1; }
+    62%, 100% { opacity: 0.35; }
+  }
+  /* each strapline owns one third of a 27s cycle */
+  @keyframes ps-cycle { 0% { opacity: 1; } 33.33% { opacity: 0; } 100% { opacity: 0; } }
+}
+
 /* Deliberately LAST in the file — see the LAYER ORDER note at the top.
    Utilities must be the last @layer block to appear so it outranks both
    `legacy` and `base` above in the compiled cascade. */

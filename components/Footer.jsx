@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Instagram, Mail, MapPin, Phone, Send } from 'lucide-react';
 import { getBusiness } from '@/lib/site';
 import { NewsletterForm } from './Forms';
+import PaymentMarks from './PaymentMarks';
 
 /* Lovable-style footer: newsletter band, brand + link columns, bottom bar
    with address/payment marks. */
@@ -99,11 +100,7 @@ export default function Footer({ dict, locale, collections = [] }) {
               {b.address && <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" /> {b.address}</span>}
               <a href={`mailto:${b.email}`} dir="ltr" className="inline-flex items-center gap-1.5 hover:text-white"><Mail className="h-3.5 w-3.5" /> {b.email}</a>
             </div>
-            <div className="flex flex-wrap items-center gap-2" aria-label={dict.payment.accept}>
-              {dict.payment.methods.map((m) => (
-                <span key={m} className="flex h-8 items-center justify-center rounded-[6px] bg-white px-2.5 text-[0.62rem] font-extrabold uppercase tracking-wide text-ink shadow-[0_1px_2px_rgba(0,0,0,0.15)]">{m}</span>
-              ))}
-            </div>
+            <PaymentMarks dict={dict} />
           </div>
         </div>
       </div>

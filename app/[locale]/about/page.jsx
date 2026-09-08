@@ -11,7 +11,6 @@ export async function generateMetadata({ params }) {
   return { title: dict.nav.about, description: dict.about.intro };
 }
 
-const WHY_ICONS = ['✦', '◆', '⚡', '❀', '▣', '☎'];
 const WALL = ['desk-tools-4', 'gift-sets-bundles-1', 'pens-pencils-4', 'notebooks-books-2', 'stickers-sticky-notes-1'];
 const WALL_SPAN = ['col-span-2 row-span-2 sm:col-span-1', 'col-span-1', 'col-span-1', 'col-span-2', 'col-span-1'];
 
@@ -28,36 +27,55 @@ export default async function AboutPage({ params }) {
 
   return (
     <>
-      {/* Hero */}
-      <section className="overflow-hidden bg-blush pb-12 pt-8 sm:pt-12">
-        <div className="mx-auto max-w-[1440px] px-5 sm:px-8">
+      {/* Hero — editorial: the opening line is the thesis, set large, with the
+          supporting story held to a readable measure beside it. */}
+      <section className="overflow-hidden bg-blush pb-14 pt-8 sm:pb-20 sm:pt-12">
+        <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
           <Breadcrumbs dict={dict} locale={locale} items={[{ label: dict.nav.about }]} />
-          <span className="eyebrow-new mt-4 text-ink/70">{t.eyebrow}</span>
-          <h1 className="display-xl mt-3 max-w-[16ch] text-ink">{t.title}</h1>
-          <p className="mt-5 max-w-xl text-sm leading-relaxed text-ink/75 sm:text-base">{t.intro}</p>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink/75 sm:text-base">{t.intro2}</p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link href={`/${locale}/shop`} className="inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 text-[0.72rem] font-extrabold uppercase tracking-[0.12em] text-white transition-colors hover:bg-coral">
-              {t.ctaShop} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
-            </Link>
-            <Link href={`/${locale}/contact`} className="inline-flex items-center gap-2 rounded-full border-2 border-ink px-8 py-4 text-[0.72rem] font-extrabold uppercase tracking-[0.12em] transition-colors hover:bg-sun">
-              {t.ctaContact}
-            </Link>
+          <div className="mt-8 grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-end lg:gap-16">
+            <div>
+              <span className="eyebrow-new text-ink/70">{t.eyebrow}</span>
+              <h1 className="display-xl mt-4 max-w-[13ch] text-ink">{t.title}</h1>
+            </div>
+            <div className="lg:pb-3">
+              <p className="max-w-[46ch] text-base leading-relaxed text-ink/80">{t.intro}</p>
+              <p className="mt-4 max-w-[46ch] text-sm leading-relaxed text-ink/65">{t.intro2}</p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link href={`/${locale}/shop`} className="ui-btn ui-btn-primary ui-btn-lg">
+                  {t.ctaShop} <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+                </Link>
+                <Link href={`/${locale}/contact`} className="ui-btn ui-btn-secondary ui-btn-lg">{t.ctaContact}</Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Shop card */}
-      <section className="mx-auto max-w-[1240px] px-5 py-12 sm:px-8 sm:py-16">
-        <div className="rounded-3xl border border-border bg-card p-7 sm:p-10">
-          <img src="/logo-icon.png" alt="" width={56} height={56} className="h-14 w-14 object-contain" />
-          <h3 className="mt-4 font-display text-xl">{t.shopTitle}</h3>
-          <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">{t.shopText}</p>
-          <p className="mt-4 text-sm">
-            <strong>{dict.contact.visit}:</strong> {b.address || dict.contact.addressFallback}<br />
-            <strong>{dict.contact.hours}:</strong> {process.env.NEXT_PUBLIC_SHOP_HOURS || dict.contact.hoursText}
-          </p>
-          <a href={b.mapsHref} target="_blank" rel="noreferrer" className="mt-4 inline-block text-[0.7rem] font-extrabold uppercase tracking-[0.12em] text-coral underline underline-offset-4">{dict.contact.map}</a>
+      {/* The counter — the shop itself, as a bordered editorial panel rather
+          than a floating card, with the practical details set as a list. */}
+      <section className="mx-auto max-w-[1240px] px-5 py-14 sm:px-8 sm:py-20">
+        <div className="grid overflow-hidden rounded-3xl border border-border bg-card lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="order-2 min-h-[240px] bg-secondary lg:order-1">
+            <img src="/products/desk-tools-4.webp" alt={t.photoAlts[0] || ''} loading="lazy" className="h-full w-full object-cover" />
+          </div>
+          <div className="order-1 p-7 sm:p-10 lg:order-2">
+            <img src="/logo-icon.png" alt="" width={48} height={48} className="h-12 w-12 object-contain" />
+            <h2 className="display-md mt-5">{t.shopTitle}</h2>
+            <p className="mt-4 max-w-[48ch] text-sm leading-relaxed text-muted-foreground">{t.shopText}</p>
+            <dl className="mt-7 grid gap-4 border-t border-border pt-6 sm:grid-cols-2">
+              <div>
+                <dt className="label-xs">{dict.contact.visit}</dt>
+                <dd className="mt-1.5 text-sm leading-relaxed">{b.address || dict.contact.addressFallback}</dd>
+              </div>
+              <div>
+                <dt className="label-xs">{dict.contact.hours}</dt>
+                <dd className="mt-1.5 text-sm leading-relaxed">{process.env.NEXT_PUBLIC_SHOP_HOURS || dict.contact.hoursText}</dd>
+              </div>
+            </dl>
+            <a href={b.mapsHref} target="_blank" rel="noreferrer" className="mt-6 inline-flex items-center gap-1.5 text-[0.68rem] font-extrabold uppercase tracking-[0.12em] text-coral">
+              {dict.contact.map} <ArrowRight className="h-3.5 w-3.5 rtl:rotate-180" />
+            </a>
+          </div>
         </div>
       </section>
 
@@ -88,16 +106,19 @@ export default async function AboutPage({ params }) {
         </div>
       </section>
 
-      {/* Why buy from us */}
+      {/* What we care about — a considered set, not a sequence, so no numbered
+          markers. The glyph row (✦ ◆ ⚡ ❀ ▣ ☎) was decorative noise; a hairline
+          rule and the typography carry it instead. */}
       <section className="mx-auto max-w-[1240px] px-5 py-14 sm:px-8 sm:py-20">
-        <span className="eyebrow-new text-muted-foreground">{t.whyEyebrow}</span>
-        <h2 className="display-md mt-2">{t.whyTitle}</h2>
-        <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="max-w-[52ch]">
+          <span className="eyebrow-new text-muted-foreground">{t.whyEyebrow}</span>
+          <h2 className="display-md mt-2">{t.whyTitle}</h2>
+        </div>
+        <div className="mt-12 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
           {t.why.map((w, i) => (
-            <div key={i} className="rounded-3xl border border-border bg-card p-6">
-              <span className="text-2xl" aria-hidden="true">{WHY_ICONS[i % WHY_ICONS.length]}</span>
-              <h3 className="mt-3 font-display text-lg">{w.t}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{w.d}</p>
+            <div key={i} className="border-t-2 border-ink pt-5">
+              <h3 className="font-display text-lg">{w.t}</h3>
+              <p className="mt-2 max-w-[38ch] text-sm leading-relaxed text-muted-foreground">{w.d}</p>
             </div>
           ))}
         </div>
@@ -139,9 +160,9 @@ export default async function AboutPage({ params }) {
           <h2 className="display-lg mx-auto max-w-[18ch]">{t.ctaTitle}</h2>
           <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">{t.ctaLede}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href={`/${locale}/shop`} className="inline-flex items-center gap-2 rounded-full bg-ink px-8 py-4 text-[0.72rem] font-extrabold uppercase tracking-[0.12em] text-white transition-colors hover:bg-coral">{t.ctaShop} <ArrowRight className="h-4 w-4 rtl:rotate-180" /></Link>
-            <Link href={`/${locale}/contact`} className="inline-flex items-center gap-2 rounded-full border-2 border-ink px-8 py-4 text-[0.72rem] font-extrabold uppercase tracking-[0.12em] transition-colors hover:bg-sun">{t.ctaContact}</Link>
-            <a href={`${b.whatsappHref}?text=${encodeURIComponent(dict.footerUi.bulkMsg)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border-2 border-transparent px-8 py-4 text-[0.72rem] font-extrabold uppercase tracking-[0.12em] underline underline-offset-4">{dict.nav.bulk}</a>
+            <Link href={`/${locale}/shop`} className="ui-btn ui-btn-primary ui-btn-lg">{t.ctaShop} <ArrowRight className="h-4 w-4 rtl:rotate-180" /></Link>
+            <Link href={`/${locale}/contact`} className="ui-btn ui-btn-secondary ui-btn-lg">{t.ctaContact}</Link>
+            <a href={`${b.whatsappHref}?text=${encodeURIComponent(dict.footerUi.bulkMsg)}`} target="_blank" rel="noreferrer" className="ui-btn ui-btn-lg underline underline-offset-4">{dict.nav.bulk}</a>
           </div>
         </div>
       </section>
