@@ -6,11 +6,11 @@
 const CHECKOUT = {
   currency: 'AED',
 
-  /* delivery: free over the threshold, flat fee under it (Abu Dhabi) */
+  /* delivery: free over the threshold, flat fee under it (UAE-wide) */
   delivery: {
     freeOver: 150,
-    fee: 15,
-    title: { en: 'Abu Dhabi delivery', ar: 'توصيل أبوظبي' },
+    fee: 25,
+    title: { en: 'UAE delivery', ar: 'توصيل داخل الإمارات' },
     collectTitle: { en: 'Collect from shop', ar: 'استلام من المتجر' },
   },
 
@@ -19,9 +19,10 @@ const CHECKOUT = {
      Keep Shopify's tax setting "All prices include tax" ON to match. */
   taxesIncludedInPrices: true,
 
-  /* Cash on Delivery */
+  /* Cash on Delivery — backend kept intact, but NOT offered publicly.
+     Flipping this to true re-exposes it in checkout with no other change. */
   cod: {
-    enabled: true,
+    enabled: false,
     /* optional surcharge in AED (0 = none) */
     fee: 0,
   },

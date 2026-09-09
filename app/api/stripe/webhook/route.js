@@ -3,6 +3,7 @@ import {
   verifyStripeSignature, unchunkPayload, quoteBasket, createOrderFromPayload,
   findOrderForKey, recordFailedOrder, STRIPE_WEBHOOK_SECRET,
 } from '@/lib/checkout-server';
+import { sendCustomerOrderEmail, sendStaffOrderEmail } from '@/lib/order-email';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -50,6 +51,23 @@ export async function POST(req) {
     }
     const rec = await createOrderFromPayload(payload, quote, { kind: 'stripe', pi: pi.id });
     console.log(`webhook: order ${rec.orderName} for ${pi.id}${rec.duplicate ? ' (duplicate)' : ''}`);
+
+    /* Order emails: only for a payment that succeeded AND produced a REAL
+       Shopify order. Skipped on a duplicate (a webhook retry must not email
+       twice) and on the demo bridge (no real order exists).
+       Deliberately awaited but never allowed to throw — a non-2xx here would
+       make Stripe retry and re-attempt order creation. */
+    if (!rec.duplicate && !rec.demo) {
+      await Promise.allSettled([
+        sendCustomerOrderEmail({ payload, quote, orderName: rec.orderName }),
+        sendStaffOrderEmail({
+          payload, quote,
+          orderName: rec.orderName, orderId: rec.orderId,
+          paymentRef: pi.id, financialStatus: 'paid',
+        }),
+      ]);
+    }
+
     return NextResponse.json({ ok: true, orderName: rec.orderName, duplicate: !!rec.duplicate });
   } catch (e) {
     await recordFailedOrder(pi.id, payload, e);

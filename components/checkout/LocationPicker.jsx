@@ -24,9 +24,12 @@ async function reverseGeocode(lat, lon, locale) {
     );
     const j = await r.json();
     const a = j.address || {};
-    return [a.building || a.house_number, a.road, a.neighbourhood || a.suburb, a.city || a.town || a.state, a.country]
+    const line = [a.building || a.house_number, a.road, a.neighbourhood || a.suburb, a.city || a.town || a.state, a.country]
       .filter(Boolean).join(', ') || j.display_name || '';
-  } catch { return ''; }
+    /* city is kept separately so the Shopify order carries the real emirate
+       instead of a hardcoded one */
+    return { line, city: a.city || a.town || a.state || '' };
+  } catch { return { line: '', city: '' }; }
 }
 
 export default function LocationPicker({ lat, lon, locale, dict, onChange }) {
@@ -40,12 +43,16 @@ export default function LocationPicker({ lat, lon, locale, dict, onChange }) {
 
   /* one place that records a new pin position and refreshes the address */
   const commit = (la, lo) => {
-    onChange({ lat: la.toFixed(6), lon: lo.toFixed(6), line: null });
+    onChange({ lat: la.toFixed(6), lon: lo.toFixed(6), line: null, city: null });
+    /* Nominatim's usage policy allows at most 1 request per second. A trailing
+       debounce longer than 1s guarantees that: every request needs a full
+       quiet period first, so back-to-back pin drags can never issue two
+       lookups inside the same second. */
     clearTimeout(debounce.current);
     debounce.current = setTimeout(async () => {
-      const line = await reverseGeocode(la, lo, locale);
-      if (line) onChange({ lat: la.toFixed(6), lon: lo.toFixed(6), line });
-    }, 600);
+      const { line, city } = await reverseGeocode(la, lo, locale);
+      if (line) onChange({ lat: la.toFixed(6), lon: lo.toFixed(6), line, city });
+    }, 1100);
   };
 
   useEffect(() => {

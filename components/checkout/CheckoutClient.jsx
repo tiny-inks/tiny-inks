@@ -138,7 +138,7 @@ export default function CheckoutClient({ dict, locale, business }) {
   const payloadBody = () => ({
     items, method,
     contact: { name: d.name.trim(), email: email.trim(), phone: d.phone.trim() },
-    address: { line: d.address.trim(), lat: d.lat, lon: d.lon },
+    address: { line: d.address.trim(), city: d.city || '', lat: d.lat, lon: d.lon },
     note, locale,
   });
 
@@ -210,7 +210,7 @@ export default function CheckoutClient({ dict, locale, business }) {
           email: (billing.email || L.email || '').trim(),
           phone: (billing.phone || L.d.phone || '').trim(),
         },
-        address: { line: (shipLine || L.d.address || '').trim(), lat: L.d.lat, lon: L.d.lon },
+        address: { line: (shipLine || L.d.address || '').trim(), city: (a.city || L.d.city || ''), lat: L.d.lat, lon: L.d.lon },
         note: L.note,
         locale: L.locale,
       };
@@ -472,11 +472,12 @@ export default function CheckoutClient({ dict, locale, business }) {
                     lon={d.lon}
                     locale={locale}
                     dict={dict}
-                    onChange={({ lat, lon, line }) =>
+                    onChange={({ lat, lon, line, city }) =>
                       cart.setDelivery({
                         ...cart.delivery,
                         lat,
                         lon,
+                        ...(city ? { city } : {}),
                         address: line
                           ? `${line}\nhttps://maps.google.com/?q=${lat},${lon}`
                           : cart.delivery.address,

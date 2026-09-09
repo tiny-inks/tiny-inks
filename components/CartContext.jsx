@@ -11,7 +11,7 @@ const CartCtx = createContext(null);
 const LS_ID = 'ti_cart_id';
 const LS_DEMO = 'ti_demo_cart';
 const LS_DELIVERY = 'ti_delivery';
-const EMPTY_DELIVERY = { name: '', phone: '', email: '', address: '', lat: '', lon: '' };
+const EMPTY_DELIVERY = { name: '', phone: '', email: '', address: '', city: '', lat: '', lon: '' };
 const PHONE_RE = /^[+\d][\d\s()-]{6,}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
