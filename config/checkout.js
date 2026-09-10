@@ -9,7 +9,7 @@ const CHECKOUT = {
   /* delivery: free over the threshold, flat fee under it (UAE-wide) */
   delivery: {
     freeOver: 150,
-    fee: 25,
+    fee: 0, // TEMPORARY for the live payment test — restore to 25 afterwards
     title: { en: 'UAE delivery', ar: 'توصيل داخل الإمارات' },
     collectTitle: { en: 'Collect from shop', ar: 'استلام من المتجر' },
   },
