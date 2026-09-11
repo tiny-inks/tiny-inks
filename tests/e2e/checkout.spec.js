@@ -171,6 +171,8 @@ test.describe('on-site checkout', () => {
       items: [{ variantId: PLANNER.variantId, qty: 1 }],
       contact: { name: 'Hook Tester', email: 'hook@example.com', phone: '+971501234567' },
       address: { line: 'Reem Island, Abu Dhabi' }, method: 'delivery', note: '', locale: 'en',
+      /* what the intent route stores: the breakdown that was charged (lib/checkout-server pricingSnapshot) */
+      pricing: { v: 1, m: 'delivery', u: [PLANNER.priceFils], q: [1], s: PLANNER.priceFils, d: DELIVERY_FILS, t: PLANNER.priceFils + DELIVERY_FILS },
     };
     const piId = `pi_e2e_${Date.now().toString(36)}`;
     const event = {
@@ -208,6 +210,51 @@ test.describe('on-site checkout', () => {
     const poll = await (await request.get(`/api/checkout/order?pi=${piId}`)).json();
     expect(poll.found).toBe(true);
     expect(poll.orderName).toBe(j1.orderName);
+  });
+
+  test('webhook: the order records exactly what Stripe charged, even when prices or the delivery fee changed since', async ({ request }) => {
+    const login = await request.post('/api/staff/login', { data: { password: process.env.STAFF_PASSWORD || 'tinyinks' } });
+    expect(login.ok()).toBe(true);
+    const base = { contact: { name: 'Price Tester', email: 'price@example.com', phone: '+971501234567' }, address: { line: 'Reem Island, Abu Dhabi' }, note: '', locale: 'en' };
+    const send = async (payload, amount) => {
+      const piId = `pi_e2e_${Math.random().toString(36).slice(2, 12)}`;
+      const ev = signedEvent({ id: `evt_${piId}`, type: 'payment_intent.succeeded', data: { object: { id: piId, object: 'payment_intent', amount, currency: 'aed', metadata: { site: 'tinyinks.ae', locale: 'en', ...chunk(payload) } } } });
+      const r = await request.post('/api/stripe/webhook', { data: ev.body, headers: { 'stripe-signature': ev.header, 'content-type': 'application/json' } });
+      return { piId, status: r.status(), json: await r.json() };
+    };
+    const staffOrder = async (name) => (await (await request.get('/api/staff/orders')).json()).orders.find((o) => o.name === name);
+
+    // delivery: charged a 17 AED fee that is NOT today's config fee → the order still totals what was charged
+    const paidDelivery = PLANNER.priceFils + 1700;
+    const delivery = await send({ ...base, items: [{ variantId: PLANNER.variantId, qty: 1 }], method: 'delivery',
+      pricing: { v: 1, m: 'delivery', u: [PLANNER.priceFils], q: [1], s: PLANNER.priceFils, d: 1700, t: paidDelivery } }, paidDelivery);
+    expect(delivery.status, JSON.stringify(delivery.json)).toBe(200);
+    const o1 = await staffOrder(delivery.json.orderName);
+    expect(o1.total).toBeCloseTo(paidDelivery / 100, 2);
+
+    // pickup: unit price edited after payment (charged 80 AED, catalogue says 95), qty 2, no delivery fee
+    const collect = await send({ ...base, items: [{ variantId: PLANNER.variantId, qty: 2 }], method: 'collect',
+      pricing: { v: 1, m: 'collect', u: [8000], q: [2], s: 16000, d: 0, t: 16000 } }, 16000);
+    expect(collect.status, JSON.stringify(collect.json)).toBe(200);
+    const o2 = await staffOrder(collect.json.orderName);
+    expect(o2.total).toBeCloseTo(160, 2);
+    expect(o2.items[0].quantity).toBe(2);
+    expect(o2.items[0].amount).toBeCloseTo(160, 2);
+
+    // a snapshot that does not add up to the charge is refused — no order with invented numbers
+    const bad = await send({ ...base, items: [{ variantId: PLANNER.variantId, qty: 1 }], method: 'delivery',
+      pricing: { v: 1, m: 'delivery', u: [PLANNER.priceFils], q: [1], s: PLANNER.priceFils, d: 0, t: PLANNER.priceFils } }, PLANNER.priceFils + 2500);
+    expect(bad.status).toBe(500);
+    expect(bad.json.stage).toBe('amount_mismatch');
+
+    // a payment from before snapshots existed whose amount no longer matches today's quote is refused too
+    const legacy = await send({ ...base, items: [{ variantId: PLANNER.variantId, qty: 1 }], method: 'delivery' }, 1);
+    expect(legacy.status).toBe(500);
+    expect(legacy.json.stage).toBe('amount_mismatch');
+
+    for (const piId of [bad.piId, legacy.piId]) {
+      expect((await (await request.get(`/api/checkout/order?pi=${piId}`)).json()).found).toBe(false);
+    }
   });
 
   test('confirmation page: failed redirect shows a clear retry path', async ({ page }) => {

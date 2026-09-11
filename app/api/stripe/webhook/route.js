@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import {
-  verifyStripeSignature, unchunkPayload, quoteBasket, createOrderFromPayload,
+  verifyStripeSignature, unchunkPayload, quoteBasket, chargedQuote, createOrderFromPayload,
   findOrderForKey, recordFailedOrder, STRIPE_WEBHOOK_SECRET,
 } from '@/lib/checkout-server';
 import { sendCustomerOrderEmail, sendStaffOrderEmail } from '@/lib/order-email';
@@ -44,14 +44,14 @@ export async function POST(req) {
   }
 
   try {
-    /* re-quote for order lines; the CHARGED amount stays what Stripe confirmed */
-    const quote = await quoteBasket(payload.items, payload.method);
-    if (!quote.ok) {
-      throw Object.assign(new Error(`re-quote failed: ${quote.error}${quote.issues ? ` ${JSON.stringify(quote.issues)}` : ''}`), { stage: 'requote' });
+    /* re-quote for titles and flags only. The MONEY on the order is what Stripe
+       charged: the price snapshot stored on the PaymentIntent, checked against
+       pi.amount (see chargedQuote). Today's prices never reach the order. */
+    const fresh = await quoteBasket(payload.items, payload.method);
+    if (!fresh.ok) {
+      throw Object.assign(new Error(`re-quote failed: ${fresh.error}${fresh.issues ? ` ${JSON.stringify(fresh.issues)}` : ''}`), { stage: 'requote' });
     }
-    if (quote.totalFils !== pi.amount) {
-      console.warn(`webhook: amount drift pi=${pi.amount} quote=${quote.totalFils} (prices changed after payment) — order created at charged amount`);
-    }
+    const quote = chargedQuote(fresh, payload.pricing, pi.amount);
     const rec = await createOrderFromPayload(payload, quote, { kind: 'stripe', pi: pi.id });
     console.log(`webhook: order ${rec.orderName} for ${pi.id}${rec.duplicate ? ' (duplicate)' : ''}`);
 

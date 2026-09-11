@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import {
-  quoteBasket, createPaymentIntent, cleanPayload, validateContact, STRIPE_LIVE, toAed,
+  quoteBasket, createPaymentIntent, pricingSnapshot, cleanPayload, validateContact, STRIPE_LIVE, toAed,
 } from '@/lib/checkout-server';
 import { rateLimit, clientIp } from '@/lib/print-server';
 import CHECKOUT from '@/config/checkout';
@@ -26,7 +26,8 @@ export async function POST(req) {
   try {
     const quote = await quoteBasket(payload.items, payload.method);
     if (!quote.ok) return NextResponse.json(quote, { status: quote.error === 'items' ? 409 : 400 });
-    const pi = await createPaymentIntent({ amountFils: quote.totalFils, payload, locale: payload.locale });
+    /* the charged breakdown travels with the payment so the webhook's order matches it exactly */
+    const pi = await createPaymentIntent({ amountFils: quote.totalFils, payload: { ...payload, pricing: pricingSnapshot(quote) }, locale: payload.locale });
     console.log(`payment_intent ${pi.id} created: ${toAed(quote.totalFils)} AED, ${quote.lines.length} lines`); // no card data is ever seen server-side
     return NextResponse.json({
       ok: true,
