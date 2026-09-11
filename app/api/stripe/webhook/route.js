@@ -4,6 +4,7 @@ import {
   findOrderForKey, recordFailedOrder, STRIPE_WEBHOOK_SECRET,
 } from '@/lib/checkout-server';
 import { sendCustomerOrderEmail, sendStaffOrderEmail } from '@/lib/order-email';
+import { redactSecrets } from '@/lib/print-server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -45,7 +46,9 @@ export async function POST(req) {
   try {
     /* re-quote for order lines; the CHARGED amount stays what Stripe confirmed */
     const quote = await quoteBasket(payload.items, payload.method);
-    if (!quote.ok) throw new Error(`re-quote failed: ${quote.error}`);
+    if (!quote.ok) {
+      throw Object.assign(new Error(`re-quote failed: ${quote.error}${quote.issues ? ` ${JSON.stringify(quote.issues)}` : ''}`), { stage: 'requote' });
+    }
     if (quote.totalFils !== pi.amount) {
       console.warn(`webhook: amount drift pi=${pi.amount} quote=${quote.totalFils} (prices changed after payment) — order created at charged amount`);
     }
@@ -70,8 +73,13 @@ export async function POST(req) {
 
     return NextResponse.json({ ok: true, orderName: rec.orderName, duplicate: !!rec.duplicate });
   } catch (e) {
+    const stage = e.stage || 'unknown';
+    const detail = redactSecrets(e?.message || e, 500);
+    console.error('WEBHOOK ORDER FAILED', JSON.stringify({ paymentIntent: pi.id, stage, status: e.status || null, detail }));
     await recordFailedOrder(pi.id, payload, e);
-    /* 500 → Stripe retries with backoff; each retry re-runs the idempotent path */
-    return NextResponse.json({ ok: false, error: 'order_failed' }, { status: 500 });
+    /* 500 → Stripe retries with backoff; each retry re-runs the idempotent path.
+       stage/status/detail are sanitised and only ever returned AFTER the Stripe
+       signature check above, so they appear in Stripe's delivery log only. */
+    return NextResponse.json({ ok: false, error: 'order_failed', stage, status: e.status || null, detail }, { status: 500 });
   }
 }
