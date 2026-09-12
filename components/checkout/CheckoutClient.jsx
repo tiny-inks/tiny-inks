@@ -64,16 +64,18 @@ function Card({ eyebrow, children }) {
   );
 }
 
-export default function CheckoutClient({ dict, locale, business }) {
+export default function CheckoutClient({ dict, locale, business, checkoutConfig }) {
   const t = dict.checkout;
   const router = useRouter();
   const cart = useCart();
-  const [status, setStatus] = useState(null); // GET /api/checkout/quote
+  /* public checkout config now arrives from the server component as a prop —
+     no mount-time GET /api/checkout/quote. Only flags + the publishable key. */
+  const [status] = useState(checkoutConfig || { stripe: false, cod: true, publishableKey: null });
   const [quote, setQuote] = useState(null);
   const [quoteErr, setQuoteErr] = useState(null);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [method, setMethod] = useState('delivery');
-  const [payMethod, setPayMethod] = useState('card');
+  const [payMethod, setPayMethod] = useState(checkoutConfig?.stripe ? 'card' : 'cod');
   const [email, setEmail] = useState('');
   const [note, setNote] = useState('');
   const [touched, setTouched] = useState({});
@@ -100,15 +102,9 @@ export default function CheckoutClient({ dict, locale, business }) {
   const hasPrintDelivery = cart.items.some((i) => /print-delivery/.test(i.variantId || ''));
   useEffect(() => { if (hasPrintDelivery) setMethod('delivery'); }, [hasPrintDelivery]);
 
-  /* payment options offered by this deployment */
-  useEffect(() => {
-    fetch('/api/checkout/quote').then((r) => r.json()).then((j) => {
-      setStatus(j);
-      if (!j.stripe) setPayMethod('cod');
-    }).catch(() => setStatus({ stripe: false, cod: true }));
-  }, []);
-
-  /* server-priced quote — refreshed whenever the basket or method changes */
+  /* server-priced quote — refreshed whenever the basket or method changes.
+     The server quote stays authoritative; this only drives what the summary
+     shows and gates the pay button. */
   const refreshQuote = useCallback(async () => {
     if (!items.length) { setQuote(null); return; }
     try {
@@ -121,7 +117,20 @@ export default function CheckoutClient({ dict, locale, business }) {
       else setQuoteErr(j);
     } catch { setQuoteErr({ error: 'network' }); }
   }, [items, method]);
-  useEffect(() => { refreshQuote(); }, [refreshQuote]);
+  /* first quote fires immediately (checkout opens fast); rapid later changes
+     (quantity steps, delivery⇄pickup toggles) are coalesced into one request.
+     A trailing debounce always ends on the latest items+method, so the price
+     shown is never stale. */
+  const quoteTimer = useRef(null);
+  const gotFirstQuote = useRef(false);
+  useEffect(() => {
+    if (!items.length) { setQuote(null); return undefined; }
+    const run = () => { gotFirstQuote.current = true; refreshQuote(); };
+    if (!gotFirstQuote.current) { run(); return undefined; }
+    clearTimeout(quoteTimer.current);
+    quoteTimer.current = setTimeout(run, 300);
+    return () => clearTimeout(quoteTimer.current);
+  }, [refreshQuote, items.length]);
 
   const contactErrs = {
     name: touched.name && !d.name.trim() ? t.required : '',
@@ -287,43 +296,50 @@ export default function CheckoutClient({ dict, locale, business }) {
     }
   }, [quote?.totalFils]);
 
-  /* mount the Payment Element once contact + address are valid — everything
-     lives on one page here, so "step 4" becomes "the moment the form is
-     complete enough to charge a card" instead of an explicit step. */
+  /* same for the deferred card element — its amount tracks the live quote so
+     Apple/Google Pay-style totals and any amount-aware UI stay correct. The
+     charged amount is still fixed by the pay-time intent, not by this. */
+  useEffect(() => {
+    if (stripeRef.current.elements && quote?.totalFils) {
+      stripeRef.current.elements.update({ amount: quote.totalFils });
+    }
+  }, [quote?.totalFils]);
+
+  /* Mount the card Payment Element in DEFERRED mode (mode/amount/currency, no
+     clientSecret). The PaymentIntent is NOT created here — it is created from
+     the FINAL checkout state at pay time (see payCard), so a customer who
+     changes quantity, delivery/pickup or address after the form appears can
+     never be charged an amount other than the one shown. This mirrors the
+     Apple/Google Pay express flow above. `paymentMethodTypes: ['card']` keeps
+     the element card-only and matched to the card-only PaymentIntent. */
   const mountPayment = useCallback(async () => {
     setPayError('');
     setStripeReady(false);
     try {
-      const r = await fetch('/api/checkout/intent', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payloadBody()),
-      });
-      const j = await r.json();
-      if (!r.ok || !j.ok) {
-        setPayError(j.error === 'items' ? issueText(j.issues, t) : t.errors[j.error] || t.errors.intent_failed);
-        return;
-      }
+      const q = liveRef.current.quote;
+      if (!q) return;
       const Stripe = await loadStripeJs();
       const stripe = Stripe(status.publishableKey);
       const elements = stripe.elements({
-        clientSecret: j.clientSecret,
+        mode: 'payment',
+        amount: q.totalFils,
+        currency: (q.currency || 'AED').toLowerCase(),
+        paymentMethodTypes: ['card'],
         locale: locale === 'ar' ? 'ar' : 'en',
         appearance: STRIPE_APPEARANCE,
       });
-      /* wallets off here — the branded Apple/Google Pay buttons live in the
-         express element above, and having both showed them twice */
       const paymentElement = elements.create('payment', {
         layout: 'tabs',
         wallets: { applePay: 'never', googlePay: 'never' },
       });
       paymentElement.mount('#payment-element');
       paymentElement.on('ready', () => setStripeReady(true));
-      stripeRef.current = { stripe, elements, pi: j.paymentIntentId, amountFils: j.amountFils };
+      stripeRef.current = { stripe, elements };
     } catch (e) {
       console.error(e);
       setPayError(t.errors.network);
     }
-  }, [items, method, email, note, d, status]); // eslint-disable-line
+  }, [status, locale]); // eslint-disable-line
 
   useEffect(() => {
     if (payMethod === 'card' && status?.stripe && readyToPay && !stripeMounted) {
@@ -336,21 +352,48 @@ export default function CheckoutClient({ dict, locale, business }) {
     const { stripe, elements } = stripeRef.current;
     if (!stripe || !elements) return;
     setPaying(true); setPayError('');
-    const { error } = await stripe.confirmPayment({
-      elements,
-      confirmParams: { return_url: `${window.location.origin}/${locale}/order/confirmed` },
-    });
-    /* only reached on immediate failure (declines, validation) — success redirects */
-    if (error) {
-      /* A half-filled card form comes back as validation_error, and Stripe has
-         ALREADY printed "Your card number is incomplete" under the field it
-         belongs to. Adding a red "the payment did not go through" banner on
-         top of that read as a failed charge when nothing was even attempted. */
-      if (error.type !== 'validation_error') {
-        setPayError(error.type === 'card_error' ? error.message : t.errors.payment_failed);
+    try {
+      /* deferred flow: validate the card fields first */
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        /* a half-filled card form is a validation_error and Stripe already shows
+           the inline hint under the field — don't stack a red banner on top */
+        if (submitError.type !== 'validation_error') setPayError(submitError.message || t.errors.payment_failed);
+        setPaying(false);
+        return;
       }
+      /* create the PaymentIntent NOW, from the final checkout state. The server
+         re-quotes (authoritative amount/prices/qty/availability/delivery) and
+         stores the charged-price snapshot the webhook verifies — so the amount
+         charged equals the amount just shown, and stale state can't be charged. */
+      const r = await fetch('/api/checkout/intent', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payloadBody()),
+      });
+      const j = await r.json();
+      if (!r.ok || !j.ok) {
+        setPayError(j.error === 'items' ? issueText(j.issues, t) : t.errors[j.error] || t.errors.intent_failed);
+        setPaying(false);
+        refreshQuote();
+        return;
+      }
+      const { error } = await stripe.confirmPayment({
+        elements,
+        clientSecret: j.clientSecret,
+        confirmParams: { return_url: `${window.location.origin}/${locale}/order/confirmed` },
+      });
+      /* only reached on immediate failure (declines, validation) — success redirects */
+      if (error) {
+        if (error.type !== 'validation_error') {
+          setPayError(error.type === 'card_error' ? error.message : t.errors.payment_failed);
+        }
+        setPaying(false);
+        refreshQuote();
+      }
+    } catch (e) {
+      console.error(e);
+      setPayError(t.errors.network);
       setPaying(false);
-      refreshQuote();
     }
   };
 

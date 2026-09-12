@@ -29,7 +29,7 @@ export default function CartPageClient({ dict, locale, collections = [] }) {
             <li key={item.lineId} className="flex gap-4 p-5">
               <Link href={`/${locale}/product/${item.handle}`} className="h-24 w-20 shrink-0 overflow-hidden rounded-2xl bg-secondary">
                 {cartLineImage(item) ? (
-                  <img src={cartLineImage(item)} alt={item.title} className="h-full w-full object-cover" />
+                  <img src={cartLineImage(item)} alt={item.title} className="h-full w-full object-cover" loading="lazy" decoding="async" />
                 ) : (
                   <Placeholder handle={item.handle} title={item.title} size="thumb" />
                 )}

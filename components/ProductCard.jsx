@@ -44,6 +44,7 @@ export default function ProductCard({ product, locale, dict, image, index = 0 })
               src={img.url}
               alt={product.title}
               loading="lazy"
+              decoding="async"
             />
           ) : (
             <Placeholder handle={product.handle} title={product.title} label={dict.cartUi.noImage} />
