@@ -9,7 +9,7 @@ const CHECKOUT = {
   /* delivery: free over the threshold, flat fee under it (UAE-wide) */
   delivery: {
     freeOver: 150,
-    fee: 0, // TEMPORARY for the live payment test — restore to 25 afterwards
+    fee: 25, // AED (→ 2500 fils); free over the threshold above. Pickup is always free.
     title: { en: 'UAE delivery', ar: 'توصيل داخل الإمارات' },
     collectTitle: { en: 'Collect from shop', ar: 'استلام من المتجر' },
   },

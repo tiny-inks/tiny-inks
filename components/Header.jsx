@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Globe, Heart, Home as HomeIcon, Info, Mail, Menu, Phone, Printer, Search, Send, ShoppingBag, Store, Truck, X,
+  Bike, Globe, Heart, Home as HomeIcon, Info, Mail, Menu, Phone, Printer, Search, Send, ShoppingBag, Store, Truck, X,
 } from 'lucide-react';
 import { useCart } from './CartContext';
 import { useWishlist } from './WishlistContext';
@@ -48,6 +48,7 @@ export default function Header({ dict, locale }) {
   const NAV = [
     { href: `/${locale}`, label: dict.nav.home, active: is(`/${locale}`) },
     { href: `/${locale}/shop`, label: dict.nav.shop, active: pathname.startsWith(`/${locale}/shop`) || pathname.startsWith(`/${locale}/product`) },
+    { href: `/${locale}/bikes`, label: locale === 'ar' ? 'الدراجات' : 'Bikes', active: pathname.startsWith(`/${locale}/bikes`) },
     { href: `/${locale}/print`, label: dict.nav.print, active: pathname.startsWith(`/${locale}/print`) },
     { href: `/${locale}/about`, label: dict.nav.about, active: is(`/${locale}/about`) },
     { href: `/${locale}/contact`, label: dict.nav.contact, active: is(`/${locale}/contact`) },
@@ -56,6 +57,7 @@ export default function Header({ dict, locale }) {
   const MENU_NAV = [
     { href: `/${locale}`, label: dict.nav.home, sub: dict.header.allCategories, Icon: HomeIcon, tint: 'bg-coral/15 text-coral' },
     { href: `/${locale}/shop`, label: dict.nav.shop, sub: dict.tagline, Icon: Store, tint: 'bg-sky/30 text-ink' },
+    { href: `/${locale}/bikes`, label: locale === 'ar' ? 'الدراجات' : 'Bikes', sub: locale === 'ar' ? 'دراجات الأطفال' : 'Kids bikes', Icon: Bike, tint: 'bg-sun/40 text-ink' },
     { href: `/${locale}/wishlist`, label: dict.nav.wishlist, sub: dict.cartUi.viewCart, Icon: Heart, tint: 'bg-coral/15 text-coral' },
     { href: `/${locale}/print`, label: dict.nav.print, sub: dict.print.eyebrow, Icon: Printer, tint: 'bg-cyan/40 text-ink' },
     { href: `/${locale}/about`, label: dict.nav.about, sub: dict.about.eyebrow, Icon: Info, tint: 'bg-sky/50 text-ink' },

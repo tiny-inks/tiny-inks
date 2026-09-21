@@ -6,6 +6,7 @@ import CategoryCircles from '@/components/CategoryCircles';
 import TabbedFavourites from '@/components/TabbedFavourites';
 import ProductMarquee from '@/components/ProductMarquee';
 import PhotoFrame from '@/components/PhotoFrame';
+import BikeBanner from '@/components/BikeBanner';
 
 import { getDict } from '@/lib/dictionaries';
 import { getProducts, getCollections, getCollectionWithProducts } from '@/lib/products';
@@ -81,6 +82,9 @@ export default async function Home({ params }) {
         <Reveal className="text-center"><h2 className="display-md">{dict.home.categoriesTitle}</h2></Reveal>
         <CategoryCircles collections={collections} locale={locale} />
       </section>
+
+      {/* Whimsy Wheels — kids bikes banner → /bikes */}
+      <BikeBanner locale={locale} />
 
       {/* Tabbed favourites */}
       {tabCols.length > 0 && <TabbedFavourites tabs={tabCols} locale={locale} dict={dict} />}
